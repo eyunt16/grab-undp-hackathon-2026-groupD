@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Mic, Home, MapPin, Check, X, Volume2, Car, Heart, Plus, ShoppingBag, ArrowRight, Settings, Eye, EyeOff } from "lucide-react";
 
 interface VoiceSimulatorProps {
@@ -30,13 +30,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
 
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<any>(null);
-
-  // Saved locations for shortcuts
-  const savedLocations = [
-    { name: "Về nhà", address: "123 Lê Lợi, Quận 1", icon: <Home className="w-5 h-5 text-emerald-600" /> },
-    { name: "Bệnh viện Chợ Rẫy", address: "201B Nguyễn Chí Thanh, Quận 5", icon: <Heart className="w-5 h-5 text-red-600" /> },
-    { name: "Chợ Bến Thành", address: "Đường Lê Lợi, Quận 1", icon: <ShoppingBag className="w-5 h-5 text-amber-600" /> },
-  ];
+  const handleSpeechInputRef = useRef<(text: string) => void>(() => {});
 
   // Helper function to speak (Vietnamese Speech Synthesis)
   const speak = (text: string) => {
@@ -72,7 +66,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
 
         rec.onresult = (event: any) => {
           const resultText = event.results[0][0].transcript;
-          handleSpeechInput(resultText);
+          handleSpeechInputRef.current(resultText);
         };
 
         rec.onerror = (event: any) => {
@@ -316,10 +310,15 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
     }, 4500);
   };
 
+  // Keep handleSpeechInputRef in sync with latest handleSpeechInput
+  useEffect(() => {
+    handleSpeechInputRef.current = handleSpeechInput;
+  });
+
   // Auto confirmation timer
   useEffect(() => {
     if (step === 4) {
-      setCountdown(3);
+      setCountdown(8);
       countdownTimerRef.current = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
@@ -351,7 +350,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
   };
 
   return (
-    <div className="flex flex-col items-center p-6 w-full max-w-[360px] mx-auto bg-slate-900 text-white rounded-[40px] border-8 border-slate-950 shadow-2xl relative overflow-hidden min-h-[635px]">
+    <div className="flex flex-col items-center p-6 w-full max-w-[360px] mx-auto bg-slate-900 text-white rounded-[40px] border-8 border-slate-950 shadow-2xl relative overflow-hidden min-h-[635px]" role="region" aria-label="Mô phỏng điện thoại người già">
       
       {/* Phone status bar */}
       <div className="w-full flex justify-between px-6 py-2 text-xs text-slate-400 font-semibold select-none mb-3">
@@ -370,7 +369,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
           <div className="flex-1 w-full flex flex-col justify-between items-center text-center">
             <div className="mt-1">
               <h2 className="text-3xl font-extrabold tracking-tight text-white mb-1">GọiĐi</h2>
-              <p className="text-slate-450 text-[13px] leading-relaxed px-1">Ông bà chỉ cần nhấn nút đỏ rồi **nói tự do** những gì mình muốn để đặt xe/đặt đồ ăn.</p>
+              <p className="text-slate-450 text-[13px] leading-relaxed px-1">Ông bà chỉ cần nhấn nút đỏ rồi <strong>nói tự do</strong> những gì mình muốn để đặt xe/đặt đồ ăn.</p>
             </div>
 
             {/* Micro button */}
@@ -379,6 +378,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
               <div className="absolute w-32 h-32 bg-emerald-500/20 rounded-full animate-pulse pointer-events-none"></div>
               <button
                 onClick={startVoiceBooking}
+                aria-label="Bấm để gọi xe bằng giọng nói"
                 className="relative z-10 w-26 h-26 bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all text-white rounded-full flex flex-col items-center justify-center shadow-lg border-4 border-slate-900 group"
               >
                 <Mic className="w-10 h-10 group-hover:scale-110 transition-transform" />
@@ -475,14 +475,14 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
 
             {/* Speech Waveform Simulation */}
             <div className="flex gap-1 items-center justify-center h-8 my-1">
-              {[...Array(6)].map((_, i) => (
+              {[18, 26, 12, 24, 14, 22].map((h, i) => (
                 <div
                   key={i}
                   className="w-1 bg-red-500 rounded-full animate-pulse"
                   style={{
-                    height: `${Math.floor(Math.random() * 20) + 10}px`,
+                    height: `${h}px`,
                     animationDelay: `${i * 0.1}s`,
-                    animationDuration: `${0.4 + Math.random() * 0.4}s`
+                    animationDuration: `${0.4 + i * 0.08}s`
                   }}
                 ></div>
               ))}

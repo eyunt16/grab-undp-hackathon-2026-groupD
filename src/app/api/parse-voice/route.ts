@@ -14,11 +14,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const prompt = `
-Bạn là bộ phận xử lý ngôn ngữ tự nhiên (NLU) cho ứng dụng "GọiĐi" dành cho người cao tuổi. 
-Nhiệm vụ của bạn là phân tích câu nói Tiếng Việt của người già và trích xuất thông tin dưới dạng JSON.
+    // Validate transcript length to prevent abuse
+    if (!transcript || typeof transcript !== "string" || transcript.length > 500) {
+      return NextResponse.json(
+        { error: "Câu nói không hợp lệ hoặc quá dài." },
+        { status: 400 }
+      );
+    }
 
-Câu nói của người già: "${transcript}"
+    const systemInstruction = `Bạn là bộ phận xử lý ngôn ngữ tự nhiên (NLU) cho ứng dụng "GọiĐi" dành cho người cao tuổi.
+Nhiệm vụ của bạn là phân tích câu nói Tiếng Việt của người già và trích xuất thông tin dưới dạng JSON.
 
 Hãy phân tích và trả về một đối tượng JSON duy nhất với cấu trúc sau:
 {
@@ -30,20 +35,23 @@ Hãy phân tích và trả về một đối tượng JSON duy nhất với cấ
 
 Chú ý:
 - Nếu người già nói "đi bệnh viện", "về nhà", "chợ", hãy điền tương ứng.
-- Trả về DUY NHẤT một chuỗi JSON hợp lệ, không bọc trong ký tự markdown như \`\`\`json.
-`;
+- Trả về DUY NHẤT một chuỗi JSON hợp lệ.`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemInstruction }],
+          },
           contents: [
             {
-              parts: [{ text: prompt }],
+              role: "user",
+              parts: [{ text: transcript }],
             },
           ],
           generationConfig: {

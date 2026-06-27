@@ -31,6 +31,13 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
   const [showSMSAlert, setShowSMSAlert] = useState(false);
   const [smsContent, setSMSContent] = useState("");
 
+  // Auto-dismiss SMS alerts after 6 seconds
+  useEffect(() => {
+    if (!showSMSAlert) return;
+    const timer = setTimeout(() => setShowSMSAlert(false), 6000);
+    return () => clearTimeout(timer);
+  }, [showSMSAlert, smsContent]);
+
   // Sync state with parent's phone simulator via BroadcastChannel
   useEffect(() => {
     if (!channel) return;
@@ -191,7 +198,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
   };
 
   return (
-    <div className="flex flex-col w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-xl min-h-[620px]">
+    <div className="flex flex-col w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-xl min-h-[620px]" role="region" aria-label="Bảng theo dõi người thân">
       
       {/* Dashboard Header */}
       <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
@@ -379,7 +386,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             <Bell className="w-3.5 h-3.5 text-slate-400" />
           </div>
 
-          <div className="flex-1 overflow-y-auto max-h-[140px] pr-1 flex flex-col gap-2">
+          <div className="flex-1 overflow-y-auto max-h-[140px] pr-1 flex flex-col gap-2" aria-live="polite">
             {notifications.map((n) => (
               <div 
                 key={n.id}
@@ -416,7 +423,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
 
       {/* Pop-up SMS Alert Notification Simulation */}
       {showSMSAlert && (
-        <div className="mt-auto bg-slate-950/95 border-2 border-emerald-500/40 rounded-2xl p-4 shadow-xl relative animate-in fade-in slide-in-from-bottom duration-300">
+        <div role="alert" className="mt-auto bg-slate-950/95 border-2 border-emerald-500/40 rounded-2xl p-4 shadow-xl relative animate-in fade-in slide-in-from-bottom duration-300">
           <button
             onClick={() => setShowSMSAlert(false)}
             className="absolute top-2.5 right-2.5 text-slate-400 hover:text-white"

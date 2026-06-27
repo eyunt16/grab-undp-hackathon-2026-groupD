@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GọiĐi — Giải Pháp Di Chuyển Cho Người Cao Tuổi
 
-## Getting Started
+> Trợ lý giọng nói Tiếng Việt (Voice AI) kết nối đa nhà xe & người bảo hộ cho người mù công nghệ.
 
-First, run the development server:
+**Grab-UNDP Hackathon 2026 · Group D**
+
+## Vấn đề
+
+Việt Nam có khoảng **4 triệu người cao tuổi** sống cô đơn, đa số không sử dụng được smartphone hay ứng dụng gọi xe hiện đại. Họ phải phụ thuộc vào người thân hoặc bỏ lỡ nhu cầu di chuyển thiết yếu (khám bệnh, chợ, chùa).
+
+## Giải pháp
+
+**GọiĐi** là một ứng dụng đặt xe/mua hộ bằng giọng nói Tiếng Việt, thiết kế tối giản cho người lớn tuổi:
+
+- 🎤 **Giao diện 1 nút** — Chỉ cần bấm nút và nói tự do bằng Tiếng Việt
+- 🛡️ **Bảng theo dõi người thân** — Con cháu nhận SMS, theo dõi hành trình, và thanh toán hộ theo thời gian thực
+- 🚗 **Kết nối đa nhà xe** — Tổng hợp giá từ Grab, Be, Xanh SM để tìm xe nhanh & rẻ nhất
+- 🧠 **AI hiểu ngữ cảnh** — Gemini AI phân tích câu nói Tiếng Việt tự do (fallback local NLU khi offline)
+- 🚨 **Cảnh báo SOS** — Phát hiện xe đi chệch lộ trình, cảnh báo người thân
+
+## Demo
+
+Truy cập ứng dụng và mở **2 tab cùng lúc** để trải nghiệm song song:
+- Tab trái: Điện thoại người già (bấm mic hoặc chọn gợi ý)
+- Tab phải: Bảng theo dõi người thân (nhận thông báo real-time)
+
+## Cài đặt & Chạy
 
 ```bash
+# Cài dependencies
+npm install
+
+# Tạo file env (tùy chọn — chạy được không cần Gemini key)
+cp .env.example .env.local
+
+# Khởi chạy development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Mở [http://localhost:3000](http://localhost:3000) để xem kết quả.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Công nghệ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Layer | Stack |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| UI | React 19 + TailwindCSS 4 + shadcn/ui |
+| Voice I/O | Web Speech API (STT + TTS vi-VN) |
+| NLU | Gemini 2.0 Flash (server route) + Local regex fallback |
+| Cross-tab sync | BroadcastChannel API |
+| Linting | Biome |
 
-## Learn More
+## Cấu trúc dự án
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── api/parse-voice/     # Gemini NLU server route
+│   ├── layout.tsx           # Root layout (vi-VN)
+│   ├── page.tsx             # Main page with tab navigation
+│   └── globals.css          # Design tokens & themes
+├── components/
+│   ├── voice-simulator.tsx  # Phone simulator (elderly UI)
+│   ├── guardian-dashboard.tsx # Guardian tracking dashboard
+│   └── budget-calculator.tsx # Business model calculator
+└── lib/
+    ├── messages.ts          # Typed BroadcastChannel protocol
+    └── utils.ts             # Tailwind merge utility
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Biến môi trường
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Biến | Bắt buộc | Mô tả |
+|---|---|---|
+| `GEMINI_API_KEY` | Không | API key cho Gemini AI NLU. Nếu không có, hệ thống dùng local regex parser. |
 
-## Deploy on Vercel
+## Nhóm
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Group D** — Grab-UNDP Hackathon 2026
