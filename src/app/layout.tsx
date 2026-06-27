@@ -14,18 +14,18 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EasyMove — Voice-First Elderly Mobility Platform",
-  description: "Vietnamese Voice AI ride-hailing assistant connecting multi-provider transport and family guardians for tech-excluded elderly.",
+  title: "EasyMove — Simple, safer rides",
+  description:
+    "Book a trusted ride and keep family updated from pickup to arrival.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
-      lang="vi"
+      lang="en"
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
@@ -34,4 +34,3 @@ export default function RootLayout({
     </html>
   );
 }
-

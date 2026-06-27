@@ -1,199 +1,131 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
-import VoiceSimulator from "@/components/voice-simulator";
-import GuardianDashboard from "@/components/guardian-dashboard";
-import BudgetCalculator from "@/components/budget-calculator";
-import { Sparkles, HelpCircle, Share2, Layers, ChevronRight, Mic, Shield, ShoppingBag } from "lucide-react";
+import { ArrowRight, HeartHandshake, MapPin, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
-  const [channel, setChannel] = useState<BroadcastChannel | null>(null);
-  const [activeTab, setActiveTab] = useState<"demo" | "business">("demo");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const chan = new BroadcastChannel("easymove-sync");
-      setChannel(chan);
-      return () => {
-        chan.close();
-      };
-    }
-  }, []);
-
   return (
-    <div className="min-h-screen bg-[#0a0e1a] text-slate-100 flex flex-col font-sans selection:bg-teal-500/30 selection:text-teal-300">
-      
-      {/* Header */}
-      <header className="relative overflow-hidden border-b border-white/[0.06] bg-[#0d1225]/80 backdrop-blur-xl px-6 py-5">
-        {/* Ambient gradients */}
-        <div className="absolute -top-20 right-10 w-[400px] h-[400px] bg-teal-500/[0.04] rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute -bottom-10 left-20 w-[300px] h-[300px] bg-indigo-500/[0.04] rounded-full blur-[100px] pointer-events-none"></div>
-        
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-1 bg-teal-500/10 text-teal-400 text-[10px] font-semibold rounded-full border border-teal-500/20 tracking-wide">
-                UNDP HACKATHON 2026
-              </span>
-              <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-semibold rounded-full border border-indigo-500/20 tracking-wide">
-                GROUP D
-              </span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-3">
-              <span className="bg-gradient-to-r from-teal-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">EasyMove</span>
-              <span className="text-white/40 font-light">—</span>
-              <span className="text-white/80 text-lg md:text-xl font-medium">Elderly Mobility Solution</span>
-            </h1>
-            <p className="text-slate-400 text-xs md:text-sm mt-1.5 max-w-xl">
-              Vietnamese Voice AI assistant connecting multi-provider rides & family guardians for tech-excluded elderly.
-            </p>
-          </div>
+    <main className="min-h-screen overflow-hidden bg-[#f6f8f5] text-[#17231d]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_18%_18%,rgba(126,211,170,0.25),transparent_34%),radial-gradient(circle_at_82%_5%,rgba(255,197,110,0.24),transparent_32%)]" />
 
-          {/* Tab switcher */}
-          <div className="flex gap-1.5 bg-white/[0.04] p-1 rounded-2xl border border-white/[0.06]">
-            <button
-              onClick={() => setActiveTab("demo")}
-              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 ${
-                activeTab === "demo"
-                  ? "bg-teal-500 text-white shadow-lg shadow-teal-500/25"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-              Live Demo
-            </button>
-            <button
-              onClick={() => setActiveTab("business")}
-              className={`px-4 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 ${
-                activeTab === "business"
-                  ? "bg-teal-500 text-white shadow-lg shadow-teal-500/25"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-              Business Case
-            </button>
-          </div>
-        </div>
+      <header className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-6 sm:px-8">
+        <Link
+          href="/"
+          className="flex items-center gap-3"
+          aria-label="EasyMove home"
+        >
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-[#157347] text-white shadow-[0_8px_24px_rgba(21,115,71,0.22)]">
+            <MapPin className="h-5 w-5" strokeWidth={2.5} />
+          </span>
+          <span className="text-xl font-extrabold tracking-[-0.04em]">
+            EasyMove
+          </span>
+        </Link>
+        <Link
+          href="/guardian"
+          className="rounded-full border border-[#d9e1dc] bg-white/80 px-4 py-2 text-sm font-semibold text-[#405149] transition hover:border-[#157347] hover:text-[#157347]"
+        >
+          Guardian sign in
+        </Link>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
-        
-        {activeTab === "demo" && (
-          <div className="flex flex-col gap-6">
-            
-            {/* Guide box */}
-            <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 backdrop-blur-sm">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-teal-500/10 rounded-xl text-teal-400 shrink-0 mt-0.5">
-                  <HelpCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm text-slate-200">Demo Guide</h3>
-                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                    Experience <strong className="text-slate-300">side-by-side</strong> below, or <strong className="text-slate-300">open 2 browser tabs</strong> with the same link.
-                    Press the mic button on the phone simulator — trip info syncs to the Guardian Dashboard in real-time via BroadcastChannel.
-                  </p>
-                </div>
+      <section className="relative mx-auto grid min-h-[calc(100vh-88px)] w-full max-w-7xl items-center gap-12 px-5 pb-16 pt-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:pb-24">
+        <div className="max-w-2xl">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#cfe4d8] bg-white/70 px-3 py-1.5 text-sm font-semibold text-[#157347] shadow-sm backdrop-blur">
+            <ShieldCheck className="h-4 w-4" />
+            Simple rides, shared peace of mind
+          </div>
+          <h1 className="text-balance text-5xl font-black leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
+            Get there safely.
+            <span className="block text-[#157347]">Keep family close.</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-[#5c6c64] sm:text-xl">
+            An easier way to book a trusted ride, with live trip updates for the
+            people who care about you.
+          </p>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            <Link
+              href="/ride"
+              className="group rounded-[1.75rem] bg-[#157347] p-6 text-white shadow-[0_18px_50px_rgba(21,115,71,0.24)] transition hover:-translate-y-1 hover:bg-[#11623c]"
+            >
+              <span className="mb-8 grid h-12 w-12 place-items-center rounded-2xl bg-white/15">
+                <MapPin className="h-6 w-6" />
+              </span>
+              <span className="block text-2xl font-bold tracking-tight">
+                I need a ride
+              </span>
+              <span className="mt-2 flex items-center justify-between text-sm text-white/80">
+                Book in a few simple steps
+                <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
+              </span>
+            </Link>
+
+            <Link
+              href="/guardian"
+              className="group rounded-[1.75rem] border border-[#dce4df] bg-white p-6 shadow-[0_18px_50px_rgba(29,48,38,0.07)] transition hover:-translate-y-1 hover:border-[#a9cbb8]"
+            >
+              <span className="mb-8 grid h-12 w-12 place-items-center rounded-2xl bg-[#edf7f1] text-[#157347]">
+                <HeartHandshake className="h-6 w-6" />
+              </span>
+              <span className="block text-2xl font-bold tracking-tight">
+                I’m a guardian
+              </span>
+              <span className="mt-2 flex items-center justify-between text-sm text-[#6a7971]">
+                Follow and support a trip
+                <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
+              </span>
+            </Link>
+          </div>
+          <p className="mt-7 text-sm text-[#7b8982]">
+            No account needed for this demo.
+          </p>
+        </div>
+
+        <div className="relative mx-auto w-full max-w-lg lg:mr-0">
+          <div className="absolute -inset-6 -rotate-3 rounded-[3rem] bg-[#dfeddf]" />
+          <div className="relative overflow-hidden rounded-[2.5rem] border border-white bg-[#20372c] p-7 text-white shadow-[0_32px_80px_rgba(25,55,40,0.22)] sm:p-9">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white/60">Today’s ride</p>
+                <p className="mt-1 text-2xl font-bold">Home → Family clinic</p>
               </div>
-              
-              <button
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    window.open(window.location.href, "_blank");
-                  }
-                }}
-                className="px-4 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 text-xs font-semibold rounded-xl border border-white/[0.08] shrink-0 flex items-center gap-2 self-end md:self-auto transition-all"
+              <span className="h-3 w-3 rounded-full bg-[#83e3ad] shadow-[0_0_0_7px_rgba(131,227,173,0.13)]" />
+            </div>
+            <div className="relative my-10 h-48 overflow-hidden rounded-[1.75rem] bg-[#dce8dc]">
+              <div className="absolute inset-0 opacity-55 [background-image:linear-gradient(28deg,transparent_46%,#a9bcae_47%,#a9bcae_50%,transparent_51%),linear-gradient(105deg,transparent_48%,#bac9bd_49%,#bac9bd_52%,transparent_53%)] [background-size:85px_72px,110px_92px]" />
+              <div className="absolute left-[18%] top-[62%] h-4 w-4 rounded-full border-4 border-white bg-[#157347] shadow-lg" />
+              <div className="absolute right-[18%] top-[25%] grid h-9 w-9 place-items-center rounded-full bg-[#f4a340] text-[#20372c] shadow-lg">
+                <MapPin className="h-5 w-5" fill="currentColor" />
+              </div>
+              <svg
+                className="absolute inset-0 h-full w-full"
+                viewBox="0 0 420 190"
+                fill="none"
+                aria-hidden="true"
               >
-                <Share2 className="w-3.5 h-3.5" />
-                Open second tab
-              </button>
+                <path
+                  d="M82 130C132 118 144 66 215 80C280 92 287 53 340 48"
+                  stroke="#157347"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                  strokeDasharray="8 9"
+                />
+              </svg>
             </div>
-
-            {/* Simulated workspaces */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              
-              {/* Voice simulator */}
-              <div className="lg:col-span-5 flex flex-col gap-3">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">A. Elderly Phone Simulator</span>
-                  <span className="text-[10px] text-teal-400 font-medium bg-teal-500/8 px-2.5 py-1 rounded-full border border-teal-500/15">Voice UI</span>
-                </div>
-                <VoiceSimulator channel={channel} />
+            <div className="flex items-center gap-4 rounded-2xl bg-white/10 p-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#f4a340] text-lg font-black text-[#20372c]">
+                ML
               </div>
-
-              {/* Guardian dashboard */}
-              <div className="lg:col-span-7 flex flex-col gap-3">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">B. Family Guardian Dashboard</span>
-                  <span className="text-[10px] text-indigo-400 font-medium bg-indigo-500/8 px-2.5 py-1 rounded-full border border-indigo-500/15">Guardian Center</span>
-                </div>
-                <GuardianDashboard channel={channel} />
-              </div>
-
-            </div>
-
-            {/* Feature cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-              <div className="group bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl hover:bg-white/[0.04] transition-all duration-300">
-                <div className="w-9 h-9 bg-teal-500/10 rounded-xl flex items-center justify-center mb-3">
-                  <Mic className="w-4.5 h-4.5 text-teal-400" />
-                </div>
-                <h4 className="font-semibold text-sm text-slate-200 mb-1.5">One-Button Interface</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Single large button with 100% audio interaction. No map, no typing, no screen navigation needed.
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">Mai Lan is on the way</p>
+                <p className="mt-0.5 text-sm text-white/60">
+                  Driver arrives in 4 minutes
                 </p>
               </div>
-              <div className="group bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl hover:bg-white/[0.04] transition-all duration-300">
-                <div className="w-9 h-9 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-3">
-                  <Shield className="w-4.5 h-4.5 text-indigo-400" />
-                </div>
-                <h4 className="font-semibold text-sm text-slate-200 mb-1.5">Family Safety Lock</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Real-time SMS alerts, proxy payment via linked wallet, and route deviation detection for fraud prevention.
-                </p>
-              </div>
-              <div className="group bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl hover:bg-white/[0.04] transition-all duration-300">
-                <div className="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center mb-3">
-                  <ShoppingBag className="w-4.5 h-4.5 text-amber-400" />
-                </div>
-                <h4 className="font-semibold text-sm text-slate-200 mb-1.5">Multi-Provider Aggregation</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Compares fares across Grab, Be, Xanh SM and traditional taxis to find the fastest, cheapest ride.
-                </p>
-              </div>
+              <ShieldCheck className="h-6 w-6 text-[#83e3ad]" />
             </div>
           </div>
-        )}
-
-        {/* Business tab */}
-        {activeTab === "business" && (
-          <div className="animate-in fade-in duration-200">
-            <div className="mb-5 bg-white/[0.02] border border-white/[0.06] p-5 rounded-2xl text-xs leading-relaxed text-slate-400">
-              <div className="flex items-start gap-3">
-                <span className="text-lg">📌</span>
-                <div>
-                  <strong className="text-slate-200">Revenue model explained:</strong>{" "}
-                  Vietnam has ~4M lonely elderly, many with low income and no bank cards. EasyMove targets their <strong className="text-teal-400">children/guardians as the paying customer</strong> through a monthly "Peace of Mind" subscription (49k VND/month).
-                  Additionally, a <strong className="text-teal-400">3,000 VND convenience fee per ride</strong> covers API costs for voice recognition & automated SMS.
-                </div>
-              </div>
-            </div>
-            <BudgetCalculator />
-          </div>
-        )}
-
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-white/[0.06] py-6 px-6 text-slate-500 text-xs text-center flex flex-col sm:flex-row justify-between items-center gap-3 max-w-7xl w-full mx-auto">
-        <p>© 2026 EasyMove · Grab-UNDP Hackathon 2026</p>
-        <p className="text-slate-600">
-          Next.js · TailwindCSS · Web Speech API · BroadcastChannel
-        </p>
-      </footer>
-      
-    </div>
+        </div>
+      </section>
+    </main>
   );
 }
