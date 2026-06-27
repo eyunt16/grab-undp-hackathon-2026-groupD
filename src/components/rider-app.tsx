@@ -2,6 +2,7 @@
 
 import {
   Check,
+  GraduationCap,
   HeartHandshake,
   Home,
   MapPin,
@@ -20,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveTripMap } from "@/components/live-trip-map";
 import {
   type AiVoiceIntent,
+  type RiderVoiceStage,
   useAiVoiceCommand,
 } from "@/hooks/use-ai-voice-command";
 import { useTripSync } from "@/hooks/use-trip-sync";
@@ -30,6 +32,23 @@ type PendingIntent =
   | { type: "call" }
   | { type: "cancel" }
   | null;
+
+type HistoryMessage = {
+  id: string;
+  sender: "user" | "bot";
+  text: string;
+};
+
+function createHistoryMessage(
+  sender: HistoryMessage["sender"],
+  text: string,
+): HistoryMessage {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    sender,
+    text,
+  };
+}
 
 const savedPlaces = [
   {
@@ -48,6 +67,14 @@ const savedPlaces = [
     icon: Stethoscope,
     color: "bg-[#e9f1f8] text-[#315f7c]",
   },
+  {
+    label: "Đi học",
+    destination: "Đại học quốc gia TP.HCM",
+    detail: "Khu đô thị Đại học Quốc gia",
+    prompt: "Toi muon di hoc",
+    icon: GraduationCap,
+    color: "bg-[#eef2ff] text-[#3949a3]",
+  },
 ];
 
 const nextStatus: Partial<Record<TripStatus, TripStatus>> = {
@@ -65,7 +92,7 @@ const nextAction: Partial<Record<TripStatus, string>> = {
 const destinationLocations: Record<string, { lat: number; lng: number }> = {
   "Nhà · 24 Nguyễn Đình Chiểu": { lat: 10.7812, lng: 106.6953 },
   "Bệnh viện Chợ Rẫy": { lat: 10.7579, lng: 106.6594 },
-  "Chợ Bến Thành": { lat: 10.7724, lng: 106.698 },
+  "Đại học quốc gia TP.HCM": { lat: 10.8702, lng: 106.8038 },
   "Nhà Linh · 88 Võ Văn Tần": { lat: 10.7752, lng: 106.6891 },
 };
 
@@ -74,10 +101,22 @@ function toKnownDestination(destination: string | undefined) {
   const voiceDestinationMap: Record<string, string> = {
     "Nha - 24 Nguyen Dinh Chieu": "Nha - 24 Nguyen Dinh Chieu",
     "Benh vien Cho Ray": "Bệnh viện Chợ Rẫy",
-    "Cho Ben Thanh": "Chợ Bến Thành",
+    "Đại học quốc gia TP.HCM": "Đại học quốc gia TP.HCM",
     "Nha Linh - 88 Vo Van Tan": "Nhà Linh · 88 Võ Văn Tần",
   };
   return voiceDestinationMap[destination] ?? destination;
+}
+
+function getRiderVoiceStage(
+  pendingIntent: PendingIntent,
+  trip: Trip | null,
+): RiderVoiceStage {
+  if (pendingIntent?.type === "cancel") return "confirm_cancel";
+  if (pendingIntent) return "confirm_booking";
+  if (trip && !["completed", "cancelled"].includes(trip.status)) {
+    return "active_trip";
+  }
+  return "start_booking";
 }
 
 export function RiderApp() {
@@ -91,14 +130,14 @@ export function RiderApp() {
   const rejectIntentRef = useRef<() => void>(() => undefined);
 
   // Conversation history log state
-  const [history, setHistory] = useState<Array<{ sender: "user" | "bot"; text: string }>>([
-    { sender: "bot", text: "Chào bà Lan, bạn cần tôi giúp gì?" }
+  const [history, setHistory] = useState<HistoryMessage[]>([
+    createHistoryMessage("bot", "Chào bà Lan, bạn cần tôi giúp gì?"),
   ]);
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [history]);
+  }, []);
 
   const handleVoiceIntent = useCallback((intent: AiVoiceIntent) => {
     voiceInitiatedRef.current = true;
@@ -126,6 +165,7 @@ export function RiderApp() {
       return;
     }
 
+    voiceInitiatedRef.current = false;
     setNotice("Toi chua hieu. Ban co the noi ve nha hoac di benh vien.");
   }, []);
 
@@ -133,28 +173,57 @@ export function RiderApp() {
     mode,
     message,
     processTextCommand,
-    startListening,
     speak,
+    startListening,
     resetVoice,
   } = useAiVoiceCommand({
+    getStage: () => getRiderVoiceStage(pendingIntent, trip),
     getContext: () => ({
       pendingIntent,
       tripStatus: trip?.status ?? null,
+      history,
     }),
     onIntent: handleVoiceIntent,
+    onReply: (text) => {
+      setHistory((prev) => {
+        if (
+          prev.length > 0 &&
+          prev[prev.length - 1].sender === "bot" &&
+          prev[prev.length - 1].text === text
+        ) {
+          return prev;
+        }
+        return [...prev, createHistoryMessage("bot", text)];
+      });
+    },
   });
 
-  // Wrapper to speak and also log bot responses
-  const speakAndLog = useCallback((text: string, listenAfter = false) => {
-    setHistory(prev => {
+  // Wrapper to log bot responses without TTS
+  const logBotMessage = useCallback((text: string) => {
+    setHistory((prev) => {
       // Avoid duplicate logs of the exact same bot response
-      if (prev.length > 0 && prev[prev.length - 1].sender === "bot" && prev[prev.length - 1].text === text) {
+      if (
+        prev.length > 0 &&
+        prev[prev.length - 1].sender === "bot" &&
+        prev[prev.length - 1].text === text
+      ) {
         return prev;
       }
-      return [...prev, { sender: "bot", text }];
+      return [...prev, createHistoryMessage("bot", text)];
     });
-    speak(text, listenAfter);
-  }, [speak]);
+  }, []);
+
+  const speakBotMessage = useCallback(
+    (text: string) => {
+      logBotMessage(text);
+      if (voiceInitiatedRef.current) {
+        voiceInitiatedRef.current = false;
+        return;
+      }
+      void speak(text);
+    },
+    [logBotMessage, speak],
+  );
 
   const askForConfirmation = useCallback(
     (intent: Exclude<PendingIntent, null>) => {
@@ -169,22 +238,15 @@ export function RiderApp() {
     if (!pendingIntent) return;
     navigator.vibrate?.([60, 40, 60]);
     if (pendingIntent.type === "ride") {
-      speakAndLog(
+      speakBotMessage(
         `Bạn muốn đặt xe đi ${pendingIntent.destination}. Đúng không?`,
-        voiceInitiatedRef.current,
       );
     } else if (pendingIntent.type === "call") {
-      speakAndLog(
-        "Bạn muốn gọi cho con gái Linh. Đúng không?",
-        voiceInitiatedRef.current,
-      );
+      speakBotMessage("Bạn muốn gọi cho con gái Linh. Đúng không?");
     } else {
-      speakAndLog(
-        "Bạn muốn hủy chuyến xe này. Đúng không?",
-        voiceInitiatedRef.current,
-      );
+      speakBotMessage("Bạn muốn hủy chuyến xe này. Đúng không?");
     }
-  }, [pendingIntent, speakAndLog]);
+  }, [pendingIntent, speakBotMessage]);
 
   const createTrip = useCallback(
     (destination: string) => {
@@ -207,9 +269,9 @@ export function RiderApp() {
       setTrip(newTrip);
       setPendingIntent(null);
       resetVoice();
-      speakAndLog("Đã đặt xe. EasyMove đang tìm tài xế gần bạn.");
+      speakBotMessage("Đã đặt xe. AloXe đang tìm tài xế gần bạn.");
     },
-    [resetVoice, setTrip, speakAndLog],
+    [resetVoice, setTrip, speakBotMessage],
   );
 
   const confirmIntent = useCallback(() => {
@@ -218,22 +280,22 @@ export function RiderApp() {
       createTrip(pendingIntent.destination);
     } else if (pendingIntent.type === "call") {
       setPendingIntent(null);
-      speakAndLog("Đang mở cuộc gọi cho Linh.");
+      speakBotMessage("Đang mở cuộc gọi cho Linh.");
       window.location.href = "tel:+84901234567";
     } else {
       updateTrip({ status: "cancelled" });
       setPendingIntent(null);
       resetVoice();
-      speakAndLog("Chuyến xe đã được hủy.");
+      speakBotMessage("Chuyến xe đã được hủy.");
     }
-  }, [createTrip, pendingIntent, resetVoice, speakAndLog, updateTrip]);
+  }, [createTrip, pendingIntent, resetVoice, speakBotMessage, updateTrip]);
 
   const rejectIntent = useCallback(() => {
     setPendingIntent(null);
     resetVoice();
     setNotice("Đã quay lại. Bạn chọn nơi muốn đến nhé.");
-    speakAndLog("Được rồi. Bạn chọn lại nhé.");
-  }, [resetVoice, speakAndLog]);
+    speakBotMessage("Được rồi. Bạn chọn lại nhé.");
+  }, [resetVoice, speakBotMessage]);
 
   useEffect(() => {
     confirmIntentRef.current = confirmIntent;
@@ -272,28 +334,30 @@ export function RiderApp() {
     }
     if (previousStatus.current && previousStatus.current !== trip.status) {
       if (trip.status === "driver_assigned") {
-        speakAndLog(
+        speakBotMessage(
           "Đã có tài xế Minh Quân. Xe màu bạc, biển số 51 H 482 16. Tài xế đến trong 4 phút.",
         );
       } else if (trip.status === "driver_arrived") {
-        speakAndLog(
+        speakBotMessage(
           "Tài xế đã đến. Bạn kiểm tra đúng biển số 51 H 482 16 trước khi lên xe nhé.",
         );
       } else if (trip.status === "completed") {
-        speakAndLog("Bạn đã đến nơi an toàn. Linh cũng đã nhận được thông báo.");
+        speakBotMessage(
+          "Bạn đã đến nơi an toàn. Linh cũng đã nhận được thông báo.",
+        );
       }
     }
     previousStatus.current = trip.status;
-  }, [speakAndLog, trip]);
+  }, [speakBotMessage, trip]);
 
   // Click handler wrappers to log button actions to conversation log
   const handleConfirmClick = useCallback(() => {
-    setHistory(prev => [...prev, { sender: "user", text: "ĐÚNG" }]);
+    setHistory((prev) => [...prev, createHistoryMessage("user", "ĐÚNG")]);
     confirmIntent();
   }, [confirmIntent]);
 
   const handleRejectClick = useCallback(() => {
-    setHistory(prev => [...prev, { sender: "user", text: "KHÔNG" }]);
+    setHistory((prev) => [...prev, createHistoryMessage("user", "KHÔNG")]);
     rejectIntent();
   }, [rejectIntent]);
 
@@ -311,7 +375,7 @@ export function RiderApp() {
             <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#11683f] text-white">
               <MapPin className="h-6 w-6" />
             </span>
-            EasyMove
+            AloXe
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -335,9 +399,9 @@ export function RiderApp() {
           <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#4d6156] mb-1 select-none border-b border-[#dfe7e2] pb-1.5">
             Lịch sử đối thoại với trợ lý
           </span>
-          {history.map((msg, index) => (
+          {history.map((msg) => (
             <div
-              key={index}
+              key={msg.id}
               className={`flex flex-col max-w-[85%] rounded-2xl px-4 py-3 text-lg font-bold leading-relaxed shadow-sm transition ${
                 msg.sender === "user"
                   ? "self-end bg-[#11683f] text-white rounded-br-none"
@@ -345,7 +409,7 @@ export function RiderApp() {
               }`}
             >
               <span className="text-[10px] opacity-75 mb-0.5 font-bold uppercase tracking-wider">
-                {msg.sender === "user" ? "Bà Lan" : "Trợ lý EasyMove"}
+                {msg.sender === "user" ? "Bà Lan" : "Trợ lý AloXe"}
               </span>
               <p>{msg.text}</p>
             </div>
@@ -379,28 +443,32 @@ export function RiderApp() {
             })
           }
           onCancel={() => {
-            setHistory(prev => [...prev, { sender: "user", text: "Yêu cầu hủy chuyến" }]);
+            setHistory((prev) => [
+              ...prev,
+              createHistoryMessage("user", "Yêu cầu hủy chuyến"),
+            ]);
             askForConfirmation({ type: "cancel" });
           }}
           onReset={() => {
             setTrip(null);
             resetVoice();
             // Reset conversation history but keep welcome message
-            setHistory([{ sender: "bot", text: "Chào bà Lan, bạn cần tôi giúp gì?" }]);
+            setHistory([
+              createHistoryMessage("bot", "Chào bà Lan, bạn cần tôi giúp gì?"),
+            ]);
           }}
         />
       ) : (
-        <ElderHome
+        <RiderHome
           voiceMode={mode}
           voiceMessage={notice || message}
           onListen={startListening}
           onChoose={(prompt) => {
-            setHistory(prev => [...prev, { sender: "user", text: prompt }]);
+            setHistory((prev) => [
+              ...prev,
+              createHistoryMessage("user", prompt),
+            ]);
             processTextCommand(prompt);
-          }}
-          onCall={() => {
-            setHistory(prev => [...prev, { sender: "user", text: "Tôi muốn gọi Linh" }]);
-            processTextCommand("Toi muon goi Linh");
           }}
         />
       )}
@@ -408,18 +476,16 @@ export function RiderApp() {
   );
 }
 
-function ElderHome({
+function RiderHome({
   voiceMode,
   voiceMessage,
   onListen,
   onChoose,
-  onCall,
 }: {
   voiceMode: string;
   voiceMessage: string;
   onListen: () => void;
   onChoose: (prompt: string) => void;
-  onCall: () => void;
 }) {
   const listening = voiceMode === "listening";
   return (
@@ -495,22 +561,6 @@ function ElderHome({
             </button>
           );
         })}
-        <button
-          type="button"
-          onClick={onCall}
-          className="flex min-h-24 w-full items-center gap-5 rounded-3xl border-2 border-[#ead8c3] bg-[#fffaf3] p-5 text-left shadow-[0_8px_24px_rgba(31,57,43,0.04)] hover:border-[#c57b2f] active:scale-[0.99]"
-        >
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#fff0db] text-[#a75d1d]">
-            <Phone className="h-8 w-8" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-2xl font-black">Gọi cho Linh</span>
-            <span className="mt-1 block text-lg text-[#6c655c]">
-              Con gái · Người thân
-            </span>
-          </span>
-          <span className="text-3xl font-black text-[#9b8b79]">›</span>
-        </button>
       </div>
     </section>
   );
@@ -628,39 +678,39 @@ function ActiveElderRide({
   const status =
     trip.status === "matching"
       ? {
-        eyebrow: "ĐÃ ĐẶT XE",
-        title: "Đang tìm tài xế",
-        detail: "Bà chờ một chút nhé",
-      }
+          eyebrow: "ĐÃ ĐẶT XE",
+          title: "Đang tìm tài xế",
+          detail: "Bà chờ một chút nhé",
+        }
       : trip.status === "driver_assigned"
         ? {
-          eyebrow: "TÀI XẾ ĐANG ĐẾN",
-          title: "Còn khoảng 4 phút",
-          detail: "Bà chờ ở cửa nhà",
-        }
+            eyebrow: "TÀI XẾ ĐANG ĐẾN",
+            title: "Còn khoảng 4 phút",
+            detail: "Bà chờ ở cửa nhà",
+          }
         : trip.status === "driver_arrived"
           ? {
-            eyebrow: "XE ĐÃ ĐẾN",
-            title: "Kiểm tra đúng biển số",
-            detail: trip.plate ?? "51H-482.16",
-          }
+              eyebrow: "XE ĐÃ ĐẾN",
+              title: "Kiểm tra đúng biển số",
+              detail: trip.plate ?? "51H-482.16",
+            }
           : trip.status === "in_progress"
             ? {
-              eyebrow: "ĐANG ĐI",
-              title: `Đang đến ${trip.destination}`,
-              detail: "Linh đang theo dõi chuyến đi",
-            }
+                eyebrow: "ĐANG ĐI",
+                title: `Đang đến ${trip.destination}`,
+                detail: "Linh đang theo dõi chuyến đi",
+              }
             : trip.status === "completed"
               ? {
-                eyebrow: "ĐÃ ĐẾN NƠI",
-                title: "Bà đã đến an toàn",
-                detail: "Linh đã nhận được thông báo",
-              }
+                  eyebrow: "ĐÃ ĐẾN NƠI",
+                  title: "Bà đã đến an toàn",
+                  detail: "Linh đã nhận được thông báo",
+                }
               : {
-                eyebrow: "ĐÃ HỦY",
-                title: "Chuyến xe đã hủy",
-                detail: "Bà có thể đặt lại bất cứ lúc nào",
-              };
+                  eyebrow: "ĐÃ HỦY",
+                  title: "Chuyến xe đã hủy",
+                  detail: "Bà có thể đặt lại bất cứ lúc nào",
+                };
 
   return (
     <section className="mx-auto w-full max-w-4xl px-5 py-7 sm:px-8 sm:py-10">

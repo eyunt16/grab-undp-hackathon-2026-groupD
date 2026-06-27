@@ -31,7 +31,7 @@ export function AppHeader({
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#157347] text-white">
               <MapPin className="h-4 w-4" strokeWidth={2.5} />
             </span>
-            EasyMove
+            AloXe
           </Link>
         </div>
         {rightSlot}

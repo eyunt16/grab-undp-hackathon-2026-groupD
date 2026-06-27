@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EasyMove — Simple, safer rides",
+  title: "AloXe — Simple, safer rides",
   description:
     "Book a trusted ride and keep family updated from pickup to arrival.",
 };

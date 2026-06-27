@@ -1,7 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Bell, Shield, Phone, MapPin, User, Car, Calendar, CreditCard, Send, AlertTriangle, AlertCircle, RefreshCw, X } from "lucide-react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  Bell,
+  Calendar,
+  Car,
+  CreditCard,
+  MapPin,
+  Phone,
+  RefreshCw,
+  Send,
+  Shield,
+  User,
+  X,
+} from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 interface GuardianDashboardProps {
   channel: BroadcastChannel | null;
@@ -15,15 +29,40 @@ interface NotificationItem {
 }
 
 export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
-  const [tripState, setTripState] = useState<"idle" | "booking" | "assigned" | "arrived" | "completed">("idle");
-  const [tripDetails, setTripDetails] = useState({ destination: "", price: 0, provider: "" });
-  const [driverDetails, setDriverDetails] = useState({ name: "", plate: "", eta: 0 });
+  const [tripState, setTripState] = useState<
+    "idle" | "booking" | "assigned" | "arrived" | "completed"
+  >("idle");
+  const [tripDetails, setTripDetails] = useState({
+    destination: "",
+    price: 0,
+    provider: "",
+  });
+  const [driverDetails, setDriverDetails] = useState({
+    name: "",
+    plate: "",
+    eta: 0,
+  });
   const [notifications, setNotifications] = useState<NotificationItem[]>([
-    { id: "1", text: "Hệ thống bảo vệ EasyMove hoạt động bình thường.", time: "10 phút trước", type: "info" },
-    { id: "2", text: "Bà Nguyễn Thị Lan đã lưu điểm đến mới: Bệnh viện Chợ Rẫy.", time: "1 giờ trước", type: "info" },
-    { id: "3", text: "Chuyến đi hôm qua: Về nhà lúc 14:30 (Bằng xe GSM - Hoàn thành an toàn).", time: "Hôm qua", type: "success" }
+    {
+      id: "1",
+      text: "Hệ thống bảo vệ AloXe hoạt động bình thường.",
+      time: "10 phút trước",
+      type: "info",
+    },
+    {
+      id: "2",
+      text: "Bà Nguyễn Thị Lan đã lưu điểm đến mới: Bệnh viện Chợ Rẫy.",
+      time: "1 giờ trước",
+      type: "info",
+    },
+    {
+      id: "3",
+      text: "Chuyến đi hôm qua: Về nhà lúc 14:30 (Bằng xe GSM - Hoàn thành an toàn).",
+      time: "Hôm qua",
+      type: "success",
+    },
   ]);
-  
+
   const [parentName] = useState("Bà Nguyễn Thị Lan (72 tuổi)");
   const [remoteDest, setRemoteDest] = useState("Bệnh viện Chợ Rẫy");
   const [remoteProvider, setRemoteProvider] = useState("Xanh SM");
@@ -51,73 +90,73 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
         setTripDetails({
           destination: payload.destination,
           price: payload.price,
-          provider: payload.provider
+          provider: payload.provider,
         });
         setOffRouteSim(false);
 
         // Add SMS simulation notification
-        const sms = `[EasyMove SMS] Mẹ của bạn (${parentName}) vừa gọi xe ${payload.provider} đi ${payload.destination}. Giá ước tính: ${payload.price.toLocaleString("vi-VN")}đ. Hệ thống đang tìm tài xế.`;
+        const sms = `[AloXe SMS] Mẹ của bạn (${parentName}) vừa gọi xe ${payload.provider} đi ${payload.destination}. Giá ước tính: ${payload.price.toLocaleString("vi-VN")}đ. Hệ thống đang tìm tài xế.`;
         setSMSContent(sms);
         setShowSMSAlert(true);
 
-        setNotifications(prev => [
+        setNotifications((prev) => [
           {
             id: Date.now().toString(),
             text: `Bà Lan đang gọi xe giọng nói đi: ${payload.destination} (${payload.provider})`,
             time: timeStr,
-            type: "info"
+            type: "info",
           },
-          ...prev
+          ...prev,
         ]);
       } else if (type === "DRIVER_ASSIGNED") {
         setTripState("assigned");
         setDriverDetails({
           name: payload.driverName,
           plate: payload.plate,
-          eta: payload.eta
+          eta: payload.eta,
         });
 
-        const sms = `[EasyMove SMS] Xe ${payload.provider} biển số ${payload.plate} (Tài xế: ${payload.driverName}) đã nhận chuyến đi của mẹ bạn (${parentName}). Xe đến đón sau ${payload.eta} phút.`;
+        const sms = `[AloXe SMS] Xe ${payload.provider} biển số ${payload.plate} (Tài xế: ${payload.driverName}) đã nhận chuyến đi của mẹ bạn (${parentName}). Xe đến đón sau ${payload.eta} phút.`;
         setSMSContent(sms);
         setShowSMSAlert(true);
 
-        setNotifications(prev => [
+        setNotifications((prev) => [
           {
             id: Date.now().toString(),
             text: `Đã gán tài xế: ${payload.driverName} (${payload.plate}) - Đón sau ${payload.eta} phút`,
             time: timeStr,
-            type: "success"
+            type: "success",
           },
-          ...prev
+          ...prev,
         ]);
       } else if (type === "DRIVER_ARRIVED") {
         setTripState("arrived");
 
-        const sms = `[EasyMove SMS] Tài xế ${payload.provider} đã đến điểm đón và đang chờ mẹ bạn (${parentName}) lên xe.`;
+        const sms = `[AloXe SMS] Tài xế ${payload.provider} đã đến điểm đón và đang chờ mẹ bạn (${parentName}) lên xe.`;
         setSMSContent(sms);
         setShowSMSAlert(true);
 
-        setNotifications(prev => [
+        setNotifications((prev) => [
           {
             id: Date.now().toString(),
             text: `Tài xế đã đến điểm đón bà Lan`,
             time: timeStr,
-            type: "success"
+            type: "success",
           },
-          ...prev
+          ...prev,
         ]);
       } else if (type === "TRIP_COMPLETED") {
         setTripState("idle");
         setOffRouteSim(false);
-        
-        setNotifications(prev => [
+
+        setNotifications((prev) => [
           {
             id: Date.now().toString(),
             text: `Chuyến đi hoàn thành an toàn. Cước phí tự động trừ qua ví người bảo hộ.`,
             time: timeStr,
-            type: "success"
+            type: "success",
           },
-          ...prev
+          ...prev,
         ]);
       }
     };
@@ -129,34 +168,34 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
   // Handle Remote Booking (Book on behalf)
   const triggerRemoteBooking = () => {
     if (!channel) return;
-    
+
     const payload = {
       destination: remoteDest,
       provider: remoteProvider,
       price: remoteProvider === "Xanh SM" ? 42000 : 38000,
-      eta: 4
+      eta: 4,
     };
 
     channel.postMessage({
       type: "REMOTE_BOOKING",
-      payload
+      payload,
     });
 
     setTripState("booking");
     setTripDetails({
       destination: remoteDest,
       price: payload.price,
-      provider: remoteProvider
+      provider: remoteProvider,
     });
 
-    setNotifications(prev => [
+    setNotifications((prev) => [
       {
         id: Date.now().toString(),
         text: `Bạn đã chủ động ĐẶT XE HỘ cho bà Lan đi ${remoteDest}`,
         time: "Vừa xong",
-        type: "info"
+        type: "info",
       },
-      ...prev
+      ...prev,
     ]);
   };
 
@@ -167,14 +206,14 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
     setTripState("idle");
     setOffRouteSim(false);
 
-    setNotifications(prev => [
+    setNotifications((prev) => [
       {
         id: Date.now().toString(),
         text: `Bạn đã chủ động HỦY CHUYẾN XE cho bà Lan`,
         time: "Vừa xong",
-        type: "warning"
+        type: "warning",
       },
-      ...prev
+      ...prev,
     ]);
   };
 
@@ -185,21 +224,24 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
     setOffRouteSim(nextVal);
 
     if (nextVal) {
-      setNotifications(prev => [
+      setNotifications((prev) => [
         {
           id: Date.now().toString(),
           text: `CẢNH BÁO SOS: Xe đi chệch khỏi tuyến đường thông thường hơn 1km!`,
           time: "Vừa xong",
-          type: "warning"
+          type: "warning",
         },
-        ...prev
+        ...prev,
       ]);
     }
   };
 
   return (
-    <div className="flex flex-col w-full bg-[#0d1225] border border-white/[0.06] rounded-3xl p-6 text-white shadow-xl shadow-black/20 min-h-[620px]" role="region" aria-label="Bảng theo dõi người thân">
-      
+    <div
+      className="flex flex-col w-full bg-[#0d1225] border border-white/[0.06] rounded-3xl p-6 text-white shadow-xl shadow-black/20 min-h-[620px]"
+      role="region"
+      aria-label="Bảng theo dõi người thân"
+    >
       {/* Dashboard Header */}
       <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
         <div>
@@ -207,11 +249,15 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             <Shield className="w-5 h-5 text-emerald-400" />
             Bảng theo dõi Người thân
           </h2>
-          <p className="text-xs text-slate-400">Giám hộ & nhận cập nhật an toàn thời gian thực</p>
+          <p className="text-xs text-slate-400">
+            Giám hộ & nhận cập nhật an toàn thời gian thực
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-          <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Đang kết nối</span>
+          <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+            Đang kết nối
+          </span>
         </div>
       </div>
 
@@ -222,8 +268,12 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             NL
           </div>
           <div>
-            <span className="text-[10px] text-slate-450 uppercase block font-semibold">Thành viên theo dõi</span>
-            <span className="text-sm font-bold text-slate-100 block">{parentName}</span>
+            <span className="text-[10px] text-slate-450 uppercase block font-semibold">
+              Thành viên theo dõi
+            </span>
+            <span className="text-sm font-bold text-slate-100 block">
+              {parentName}
+            </span>
           </div>
         </div>
 
@@ -233,8 +283,12 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
               <CreditCard className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <span className="text-[10px] text-slate-450 uppercase block font-semibold">Tài khoản trả cước hộ</span>
-              <span className="text-sm font-bold text-slate-100 block">Ví Momo · **** 6789</span>
+              <span className="text-[10px] text-slate-450 uppercase block font-semibold">
+                Tài khoản trả cước hộ
+              </span>
+              <span className="text-sm font-bold text-slate-100 block">
+                Ví Momo · **** 6789
+              </span>
             </div>
           </div>
           <span className="px-2.5 py-0.5 bg-slate-800 border border-slate-750 text-[10px] font-bold text-slate-300 rounded-md">
@@ -266,37 +320,55 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
               {/* Road line */}
               <div className="absolute w-full h-1.5 bg-slate-800 rounded-full"></div>
               {/* Active path */}
-              <div 
+              <div
                 className="absolute left-0 h-1.5 bg-emerald-500 rounded-full transition-all duration-[6000ms]"
                 style={{
-                  width: tripState === "booking" ? "10%" : tripState === "assigned" ? "65%" : "100%"
+                  width:
+                    tripState === "booking"
+                      ? "10%"
+                      : tripState === "assigned"
+                        ? "65%"
+                        : "100%",
                 }}
               ></div>
 
               {/* Start pin */}
               <div className="absolute left-[5%] flex flex-col items-center">
                 <div className="w-3.5 h-3.5 rounded-full bg-slate-300 border-2 border-slate-900 z-10 shadow-lg"></div>
-                <span className="text-[9px] text-slate-500 mt-1 font-bold">Điểm đón</span>
+                <span className="text-[9px] text-slate-500 mt-1 font-bold">
+                  Điểm đón
+                </span>
               </div>
 
               {/* Target pin */}
               <div className="absolute right-[5%] flex flex-col items-center">
                 <div className="w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-slate-900 z-10 shadow-lg animate-pulse"></div>
-                <span className="text-[9px] text-slate-400 mt-1 font-bold truncate max-w-[120px]">{tripDetails.destination}</span>
+                <span className="text-[9px] text-slate-400 mt-1 font-bold truncate max-w-[120px]">
+                  {tripDetails.destination}
+                </span>
               </div>
 
               {/* Moving Car Icon */}
-              <div 
+              <div
                 className="absolute -translate-y-4 -translate-x-3 transition-all duration-[6000ms] flex flex-col items-center"
                 style={{
-                  left: tripState === "booking" ? "10%" : tripState === "assigned" ? "65%" : "100%"
+                  left:
+                    tripState === "booking"
+                      ? "10%"
+                      : tripState === "assigned"
+                        ? "65%"
+                        : "100%",
                 }}
               >
-                <div className={`p-1.5 rounded-full shadow-xl border border-slate-800 ${offRouteSim ? "bg-red-650 animate-bounce" : "bg-emerald-600"}`}>
+                <div
+                  className={`p-1.5 rounded-full shadow-xl border border-slate-800 ${offRouteSim ? "bg-red-650 animate-bounce" : "bg-emerald-600"}`}
+                >
                   <Car className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-[8px] bg-slate-900 px-1 border border-slate-850 rounded text-slate-300 mt-0.5 whitespace-nowrap">
-                  {offRouteSim ? "Chệch hướng!" : `${driverDetails.plate || "Tìm xe..."}`}
+                  {offRouteSim
+                    ? "Chệch hướng!"
+                    : `${driverDetails.plate || "Tìm xe..."}`}
                 </span>
               </div>
             </div>
@@ -306,12 +378,21 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
               <div className="absolute inset-0 bg-red-950/90 border border-red-700/50 rounded-xl p-3 flex flex-col justify-center items-center text-center gap-2 animate-pulse">
                 <AlertCircle className="w-8 h-8 text-red-500" />
                 <div>
-                  <p className="text-red-400 font-bold text-sm">Cảnh báo SOS: Xe đi chệch lộ trình</p>
-                  <p className="text-[10px] text-slate-350">Hệ thống phát hiện tài xế đang đi sai đường 1.2km về phía cầu Sài Gòn.</p>
+                  <p className="text-red-400 font-bold text-sm">
+                    Cảnh báo SOS: Xe đi chệch lộ trình
+                  </p>
+                  <p className="text-[10px] text-slate-350">
+                    Hệ thống phát hiện tài xế đang đi sai đường 1.2km về phía
+                    cầu Sài Gòn.
+                  </p>
                 </div>
                 <div className="flex gap-2 w-full max-w-[240px]">
-                  <button className="flex-1 py-1.5 bg-red-600 text-white font-bold rounded-lg text-[10px]"><Phone className="w-3 h-3 inline mr-1" /> Gọi tài xế</button>
-                  <button className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-lg text-[10px]"><Phone className="w-3 h-3 inline mr-1" /> Gọi bà Lan</button>
+                  <button className="flex-1 py-1.5 bg-red-600 text-white font-bold rounded-lg text-[10px]">
+                    <Phone className="w-3 h-3 inline mr-1" /> Gọi tài xế
+                  </button>
+                  <button className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-lg text-[10px]">
+                    <Phone className="w-3 h-3 inline mr-1" /> Gọi bà Lan
+                  </button>
                 </div>
               </div>
             )}
@@ -321,7 +402,6 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
 
       {/* Control panel & Remote Book Room */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        
         {/* Remote booking tool ( wow factor ) */}
         <div className="bg-slate-850 p-4 rounded-2xl border border-slate-800 flex flex-col justify-between">
           <div>
@@ -330,21 +410,33 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             </h4>
             <div className="flex flex-col gap-2">
               <div>
-                <label className="text-[9px] text-slate-450 block font-semibold mb-1">Điểm đến cho cha mẹ</label>
+                <label className="text-[9px] text-slate-450 block font-semibold mb-1">
+                  Điểm đến cho cha mẹ
+                </label>
                 <select
                   value={remoteDest}
                   onChange={(e) => setRemoteDest(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-750 text-xs rounded-lg p-2 focus:outline-none focus:border-emerald-500 font-medium"
                 >
-                  <option value="Bệnh viện Chợ Rẫy">Bệnh viện Chợ Rẫy (Q5)</option>
-                  <option value="Chợ Bến Thành">Chợ Bến Thành (Q1)</option>
-                  <option value="Chùa Vĩnh Nghiêm">Chùa Vĩnh Nghiêm (Q3)</option>
-                  <option value="Siêu thị Co.opmart Cống Quỳnh">Siêu thị Co.opmart Cống Quỳnh</option>
+                  <option value="Bệnh viện Chợ Rẫy">
+                    Bệnh viện Chợ Rẫy (Q5)
+                  </option>
+                  <option value="Đại học quốc gia TP.HCM">
+                    Đại học quốc gia TP.HCM
+                  </option>
+                  <option value="Chùa Vĩnh Nghiêm">
+                    Chùa Vĩnh Nghiêm (Q3)
+                  </option>
+                  <option value="Siêu thị Co.opmart Cống Quỳnh">
+                    Siêu thị Co.opmart Cống Quỳnh
+                  </option>
                 </select>
               </div>
 
               <div>
-                <label className="text-[9px] text-slate-450 block font-semibold mb-1">Hãng xe muốn đặt</label>
+                <label className="text-[9px] text-slate-450 block font-semibold mb-1">
+                  Hãng xe muốn đặt
+                </label>
                 <select
                   value={remoteProvider}
                   onChange={(e) => setRemoteProvider(e.target.value)}
@@ -386,12 +478,15 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             <Bell className="w-3.5 h-3.5 text-slate-400" />
           </div>
 
-          <div className="flex-1 overflow-y-auto max-h-[140px] pr-1 flex flex-col gap-2" aria-live="polite">
+          <div
+            className="flex-1 overflow-y-auto max-h-[140px] pr-1 flex flex-col gap-2"
+            aria-live="polite"
+          >
             {notifications.map((n) => (
-              <div 
+              <div
                 key={n.id}
                 className={`p-2 rounded-xl text-[11px] border leading-relaxed ${
-                  n.type === "warning" 
+                  n.type === "warning"
                     ? "bg-red-950/20 border-red-900/40 text-red-300"
                     : n.type === "success"
                       ? "bg-emerald-950/20 border-emerald-900/40 text-emerald-300"
@@ -399,7 +494,13 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
                 }`}
               >
                 <div className="flex justify-between font-bold text-[9px] text-slate-500 mb-0.5">
-                  <span>{n.type === "warning" ? "CẢNH BÁO" : n.type === "success" ? "TIN BÁO" : "HỆ THỐNG"}</span>
+                  <span>
+                    {n.type === "warning"
+                      ? "CẢNH BÁO"
+                      : n.type === "success"
+                        ? "TIN BÁO"
+                        : "HỆ THỐNG"}
+                  </span>
                   <span>{n.time}</span>
                 </div>
                 <p>{n.text}</p>
@@ -418,12 +519,14 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             </button>
           )}
         </div>
-
       </div>
 
       {/* Pop-up SMS Alert Notification Simulation */}
       {showSMSAlert && (
-        <div role="alert" className="mt-auto bg-slate-950/95 border-2 border-emerald-500/40 rounded-2xl p-4 shadow-xl relative animate-in fade-in slide-in-from-bottom duration-300">
+        <div
+          role="alert"
+          className="mt-auto bg-slate-950/95 border-2 border-emerald-500/40 rounded-2xl p-4 shadow-xl relative animate-in fade-in slide-in-from-bottom duration-300"
+        >
           <button
             onClick={() => setShowSMSAlert(false)}
             className="absolute top-2.5 right-2.5 text-slate-400 hover:text-white"
@@ -436,7 +539,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             </div>
             <div>
               <h5 className="text-[10px] font-bold uppercase tracking-wider text-teal-400 mb-1">
-                Tin nhắn SMS tự động gửi tới người thân (EasyMove)
+                Tin nhắn SMS tự động gửi tới người thân (AloXe)
               </h5>
               <p className="text-xs text-slate-200 leading-relaxed font-mono italic">
                 "{smsContent}"
@@ -445,7 +548,6 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -29,8 +29,8 @@ export type GeoPoint = {
   lng: number;
 };
 
-export const TRIP_STORAGE_KEY = "easymove.current-trip.v2";
-export const TRIP_CHANNEL = "easymove-trip-sync-v2";
+export const TRIP_STORAGE_KEY = "aloxe.current-trip.v2";
+export const TRIP_CHANNEL = "aloxe-trip-sync-v2";
 
 export const statusCopy: Record<TripStatus, string> = {
   matching: "Đang tìm tài xế",

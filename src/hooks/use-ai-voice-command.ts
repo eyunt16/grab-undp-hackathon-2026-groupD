@@ -18,6 +18,12 @@ export type AiVoiceIntent =
   | { type: "reject" }
   | { type: "unknown" };
 
+export type RiderVoiceStage =
+  | "start_booking"
+  | "confirm_booking"
+  | "active_trip"
+  | "confirm_cancel";
+
 type VoiceResponse = {
   transcript?: string;
   intent?: AiVoiceIntent;
@@ -32,7 +38,9 @@ type VoiceResponse = {
 
 type UseAiVoiceCommandOptions = {
   getContext: () => unknown;
+  getStage: () => RiderVoiceStage;
   onIntent: (intent: AiVoiceIntent) => void;
+  onReply?: (text: string) => void;
 };
 
 function audioUrl(audio: NonNullable<VoiceResponse["audio"]>) {
@@ -41,7 +49,9 @@ function audioUrl(audio: NonNullable<VoiceResponse["audio"]>) {
 
 export function useAiVoiceCommand({
   getContext,
+  getStage,
   onIntent,
+  onReply,
 }: UseAiVoiceCommandOptions) {
   const [mode, setMode] = useState<AiVoiceMode>("idle");
   const [message, setMessage] = useState("Nhấn nút và nói nơi bạn muốn đến");
@@ -51,12 +61,16 @@ export function useAiVoiceCommand({
   const streamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const getContextRef = useRef(getContext);
+  const getStageRef = useRef(getStage);
   const onIntentRef = useRef(onIntent);
+  const onReplyRef = useRef(onReply);
 
   useEffect(() => {
     getContextRef.current = getContext;
+    getStageRef.current = getStage;
     onIntentRef.current = onIntent;
-  }, [getContext, onIntent]);
+    onReplyRef.current = onReply;
+  }, [getContext, getStage, onIntent, onReply]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -101,10 +115,11 @@ export function useAiVoiceCommand({
   const handleAudioRecorded = useCallback(
     async (audioBlob: Blob) => {
       setMode("processing");
-      setMessage("EasyMove đang nghe và phân tích...");
+      setMessage("AloXe đang nghe và phân tích...");
 
       const form = new FormData();
       form.append("audio", audioBlob, "rider-command.webm");
+      form.append("stage", getStageRef.current());
       form.append("context", JSON.stringify(getContextRef.current()));
 
       const response = await fetch("/api/rider-voice", {
@@ -125,6 +140,9 @@ export function useAiVoiceCommand({
           ? `Đã nghe: "${data.transcript}"`
           : (data.replyText ?? ""),
       );
+      if (data.replyText && onReplyRef.current) {
+        onReplyRef.current(data.replyText);
+      }
       navigator.vibrate?.(70);
       if (data.intent) onIntentRef.current(data.intent);
       await playAudio(data.audio);
@@ -137,13 +155,13 @@ export function useAiVoiceCommand({
   const processTextCommand = useCallback(
     async (text: string) => {
       setMode("processing");
-      setMessage("EasyMove dang phan tich...");
-
+      setMessage("AloXe dang phan tich...");
       const response = await fetch("/api/rider-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text,
+          stage: getStageRef.current(),
           context: getContextRef.current(),
         }),
       });
@@ -157,7 +175,37 @@ export function useAiVoiceCommand({
 
       setTranscript(data.transcript ?? text);
       setMessage(data.replyText ?? text);
+      if (data.replyText && onReplyRef.current) {
+        onReplyRef.current(data.replyText);
+      }
       if (data.intent) onIntentRef.current(data.intent);
+      await playAudio(data.audio);
+    },
+    [playAudio],
+  );
+
+  const speak = useCallback(
+    async (text: string) => {
+      const cleanText = text.trim();
+      if (!cleanText) return;
+
+      setMode("processing");
+      setMessage(cleanText);
+
+      const response = await fetch("/api/rider-voice/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleanText }),
+      });
+      const data = (await response.json()) as VoiceResponse;
+
+      if (!response.ok) {
+        setMode("error");
+        setMessage(data.error ?? "Khong the phat giong noi luc nay.");
+        return;
+      }
+
+      setMessage(data.replyText ?? cleanText);
       await playAudio(data.audio);
     },
     [playAudio],
@@ -215,29 +263,6 @@ export function useAiVoiceCommand({
     }
   }, [handleAudioRecorded]);
 
-  const speak = useCallback(
-    async (text: string, listenAfter = false) => {
-      setMessage(text);
-      setMode("processing");
-      const response = await fetch("/api/rider-voice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ speakText: text }),
-      });
-      const data = (await response.json()) as VoiceResponse;
-
-      if (!response.ok) {
-        setMode("error");
-        setMessage(data.error ?? text);
-        return;
-      }
-
-      await playAudio(data.audio);
-      if (listenAfter) window.setTimeout(() => void startListening(), 250);
-    },
-    [playAudio, startListening],
-  );
-
   const resetVoice = useCallback(() => {
     audioRef.current?.pause();
     setTranscript("");
@@ -259,9 +284,9 @@ export function useAiVoiceCommand({
     transcript,
     handleAudioRecorded,
     processTextCommand,
+    speak,
     setRecordingMode,
     startListening,
-    speak,
     resetVoice,
   };
 }

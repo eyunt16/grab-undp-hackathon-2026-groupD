@@ -105,7 +105,7 @@ export function LiveTripMap({
         .addTo(map);
 
       const vehicleElement = document.createElement("div");
-      vehicleElement.className = "easymove-live-vehicle";
+      vehicleElement.className = "aloxe-live-vehicle";
       const vehicleIcon = document.createElement("span");
       vehicleIcon.textContent = "🚗";
       const vehicleLabel = document.createElement("strong");

@@ -1,4 +1,4 @@
-# EasyMove — Elderly Mobility Solution
+# AloXe — Elderly Mobility Solution
 
 > Vietnamese Voice AI assistant connecting multi-provider rides & family guardians for tech-excluded elderly.
 
@@ -10,7 +10,7 @@ Vietnam has approximately **4 million elderly people** living alone, most of who
 
 ## Solution
 
-**EasyMove** is a voice-first ride-hailing and errand-running app designed for elderly users:
+**AloXe** is a voice-first ride-hailing and errand-running app designed for elderly users:
 
 - 🎤 **One-button interface** — Press the button and speak freely in Vietnamese
 - 🛡️ **Family guardian dashboard** — Children receive SMS, track trips, and pay on behalf in real-time

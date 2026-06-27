@@ -145,7 +145,7 @@ a {
   transition-duration: 160ms;
 }
 
-.easymove-live-vehicle {
+.aloxe-live-vehicle {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -153,7 +153,7 @@ a {
   transition: transform 900ms linear;
 }
 
-.easymove-live-vehicle > span {
+.aloxe-live-vehicle > span {
   display: grid;
   width: 54px;
   height: 54px;
@@ -164,7 +164,7 @@ a {
   font-size: 26px;
 }
 
-.easymove-live-vehicle > strong {
+.aloxe-live-vehicle > strong {
   margin-top: 5px;
   padding: 4px 9px;
   border-radius: 999px;

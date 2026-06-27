@@ -3,7 +3,7 @@
  * between the Voice Simulator (elderly phone) and Guardian Dashboard.
  */
 
-export type EasyMoveMessage =
+export type AloXeMessage =
   | {
       type: "BOOKING_STARTED";
       payload: {
@@ -42,9 +42,9 @@ export type EasyMoveMessage =
   | { type: "CANCEL_TRIP" };
 
 /** Type-safe helper to post a message to the BroadcastChannel */
-export function postEasyMoveMessage(
+export function postAloXeMessage(
   channel: BroadcastChannel | null,
-  message: EasyMoveMessage,
+  message: AloXeMessage,
 ) {
   if (channel) {
     channel.postMessage(message);
