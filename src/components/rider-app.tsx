@@ -1,60 +1,47 @@
 "use client";
 
 import {
-  ArrowRight,
   Check,
-  ChevronLeft,
-  Clock3,
   HeartHandshake,
   Home,
   MapPin,
-  MessageCircle,
+  Mic,
+  MicOff,
   Navigation,
   Phone,
-  Search,
   ShieldCheck,
-  Star,
+  Siren,
+  Stethoscope,
+  Volume2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { AppHeader } from "@/components/app-header";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LiveTripMap } from "@/components/live-trip-map";
 import { useTripSync } from "@/hooks/use-trip-sync";
-import { statusCopy, type Trip, type TripStatus } from "@/lib/trip";
+import { useVietnameseVoice } from "@/hooks/use-vietnamese-voice";
+import type { Trip, TripStatus } from "@/lib/trip";
 
-const destinations = [
-  {
-    name: "Family clinic",
-    address: "12 Nguyễn Thị Minh Khai",
-    icon: HeartHandshake,
-  },
-  { name: "Bến Thành Market", address: "Lê Lợi, District 1", icon: Star },
-  { name: "Lan’s home", address: "88 Võ Văn Tần", icon: Home },
-];
+type PendingIntent =
+  | { type: "ride"; destination: string }
+  | { type: "call" }
+  | { type: "cancel" }
+  | null;
 
-const providers = [
+const savedPlaces = [
   {
-    id: "EasyCar",
-    name: "EasyCar",
-    note: "Recommended",
-    eta: 4,
-    price: 68000,
-    color: "bg-[#157347]",
+    label: "Về nhà",
+    destination: "Nhà · 24 Nguyễn Đình Chiểu",
+    detail: "Địa chỉ nhà đã lưu",
+    icon: Home,
+    color: "bg-[#e9f5ee] text-[#11683f]",
   },
   {
-    id: "Comfort Taxi",
-    name: "Comfort Taxi",
-    note: "More spacious",
-    eta: 7,
-    price: 82000,
-    color: "bg-[#315a76]",
-  },
-  {
-    id: "City Cab",
-    name: "City Cab",
-    note: "Lowest fare",
-    eta: 9,
-    price: 61000,
-    color: "bg-[#d8872f]",
+    label: "Đi bệnh viện",
+    destination: "Bệnh viện Chợ Rẫy",
+    detail: "Cổng chính đường Nguyễn Chí Thanh",
+    icon: Stethoscope,
+    color: "bg-[#e9f1f8] text-[#315f7c]",
   },
 ];
 
@@ -65,22 +52,170 @@ const nextStatus: Partial<Record<TripStatus, TripStatus>> = {
 };
 
 const nextAction: Partial<Record<TripStatus, string>> = {
-  driver_assigned: "Driver has arrived",
-  driver_arrived: "I’m in the car",
-  in_progress: "I’ve arrived",
+  driver_assigned: "Tài xế đã đến",
+  driver_arrived: "Tôi đã lên xe",
+  in_progress: "Tôi đã đến nơi",
 };
+
+const destinationLocations: Record<string, { lat: number; lng: number }> = {
+  "Nhà · 24 Nguyễn Đình Chiểu": { lat: 10.7812, lng: 106.6953 },
+  "Bệnh viện Chợ Rẫy": { lat: 10.7579, lng: 106.6594 },
+  "Chợ Bến Thành": { lat: 10.7724, lng: 106.698 },
+  "Nhà Linh · 88 Võ Văn Tần": { lat: 10.7752, lng: 106.6891 },
+};
+
+function normalizeVietnamese(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .toLowerCase();
+}
 
 export function RiderApp() {
   const { trip, ready, setTrip, updateTrip } = useTripSync();
-  const [step, setStep] = useState<"destination" | "options">("destination");
-  const [destination, setDestination] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState(providers[0].id);
+  const [pendingIntent, setPendingIntent] = useState<PendingIntent>(null);
+  const [notice, setNotice] = useState("");
+  const previousStatus = useRef<TripStatus | null>(null);
+  const voiceInitiatedRef = useRef(false);
 
-  const provider = useMemo(
-    () =>
-      providers.find((item) => item.id === selectedProvider) ?? providers[0],
-    [selectedProvider],
+  const confirmIntentRef = useRef<() => void>(() => undefined);
+  const rejectIntentRef = useRef<() => void>(() => undefined);
+
+  const handleVoiceCommand = useCallback((rawTranscript: string) => {
+    voiceInitiatedRef.current = true;
+    const command = normalizeVietnamese(rawTranscript);
+    const isYes = /\b(dung|dong y|xac nhan|dat xe|co)\b/.test(command);
+    const isNo = /\b(khong|quay lai|thoi)\b/.test(command);
+
+    if (isYes) {
+      confirmIntentRef.current();
+      return;
+    }
+    if (isNo) {
+      rejectIntentRef.current();
+      return;
+    }
+    if (/goi.*(linh|con|nguoi than)/.test(command)) {
+      setPendingIntent({ type: "call" });
+      return;
+    }
+    if (/\b(huy|huy chuyen)\b/.test(command)) {
+      setPendingIntent({ type: "cancel" });
+      return;
+    }
+    if (/ve nha|di nha/.test(command)) {
+      setPendingIntent({
+        type: "ride",
+        destination: "Nhà · 24 Nguyễn Đình Chiểu",
+      });
+      return;
+    }
+    if (/benh vien|di kham|kham benh/.test(command)) {
+      setPendingIntent({ type: "ride", destination: "Bệnh viện Chợ Rẫy" });
+      return;
+    }
+    if (/cho|ben thanh/.test(command)) {
+      setPendingIntent({ type: "ride", destination: "Chợ Bến Thành" });
+      return;
+    }
+    if (/nha linh|nha con/.test(command)) {
+      setPendingIntent({
+        type: "ride",
+        destination: "Nhà Linh · 88 Võ Văn Tần",
+      });
+      return;
+    }
+
+    setNotice("Tôi chưa hiểu. Bạn có thể nói “về nhà” hoặc “đi bệnh viện”.");
+  }, []);
+
+  const { mode, message, startListening, speak, resetVoice } =
+    useVietnameseVoice(handleVoiceCommand);
+
+  const askForConfirmation = useCallback(
+    (intent: Exclude<PendingIntent, null>) => {
+      setPendingIntent(intent);
+      setNotice("");
+      voiceInitiatedRef.current = false;
+    },
+    [],
   );
+
+  useEffect(() => {
+    if (!pendingIntent) return;
+    navigator.vibrate?.([60, 40, 60]);
+    if (pendingIntent.type === "ride") {
+      speak(
+        `Bạn muốn đặt xe đi ${pendingIntent.destination}. Đúng không?`,
+        voiceInitiatedRef.current,
+      );
+    } else if (pendingIntent.type === "call") {
+      speak(
+        "Bạn muốn gọi cho con gái Linh. Đúng không?",
+        voiceInitiatedRef.current,
+      );
+    } else {
+      speak(
+        "Bạn muốn hủy chuyến xe này. Đúng không?",
+        voiceInitiatedRef.current,
+      );
+    }
+  }, [pendingIntent, speak]);
+
+  const createTrip = useCallback(
+    (destination: string) => {
+      const newTrip: Trip = {
+        id: `EM-${Date.now().toString().slice(-6)}`,
+        riderName: "Mai Lan",
+        pickup: "Điểm đón hiện tại · 42 Võ Thị Sáu",
+        destination,
+        provider: "EasyCar",
+        price: destination.includes("Bệnh viện") ? 68000 : 52000,
+        eta: 4,
+        status: "matching",
+        pickupLocation: { lat: 10.7864, lng: 106.6908 },
+        destinationLocation:
+          destinationLocations[destination] ??
+          destinationLocations["Bệnh viện Chợ Rẫy"],
+        liveProgress: 0,
+        createdAt: new Date().toISOString(),
+      };
+      setTrip(newTrip);
+      setPendingIntent(null);
+      resetVoice();
+      speak("Đã đặt xe. EasyMove đang tìm tài xế gần bạn.");
+    },
+    [resetVoice, setTrip, speak],
+  );
+
+  const confirmIntent = useCallback(() => {
+    if (!pendingIntent) return;
+    if (pendingIntent.type === "ride") {
+      createTrip(pendingIntent.destination);
+    } else if (pendingIntent.type === "call") {
+      setPendingIntent(null);
+      speak("Đang mở cuộc gọi cho Linh.");
+      window.location.href = "tel:+84901234567";
+    } else {
+      updateTrip({ status: "cancelled" });
+      setPendingIntent(null);
+      resetVoice();
+      speak("Chuyến xe đã được hủy.");
+    }
+  }, [createTrip, pendingIntent, resetVoice, speak, updateTrip]);
+
+  const rejectIntent = useCallback(() => {
+    setPendingIntent(null);
+    resetVoice();
+    setNotice("Đã quay lại. Bạn chọn nơi muốn đến nhé.");
+    speak("Được rồi. Bạn chọn lại nhé.");
+  }, [resetVoice, speak]);
+
+  useEffect(() => {
+    confirmIntentRef.current = confirmIntent;
+    rejectIntentRef.current = rejectIntent;
+  }, [confirmIntent, rejectIntent]);
 
   useEffect(() => {
     if (trip?.status !== "matching") return;
@@ -89,417 +224,505 @@ export function RiderApp() {
         status: "driver_assigned",
         driverName: "Minh Quân",
         plate: "51H-482.16",
-        vehicle: "Silver Toyota Vios",
+        vehicle: "Toyota Vios màu bạc",
       });
     }, 1400);
     return () => window.clearTimeout(timer);
   }, [trip?.status, updateTrip]);
 
-  const startBooking = () => {
-    if (!destination.trim()) return;
-    setStep("options");
-  };
+  useEffect(() => {
+    if (!trip || !["driver_assigned", "in_progress"].includes(trip.status))
+      return;
+    const limit = trip.status === "driver_assigned" ? 0.92 : 0.95;
+    const current = trip.liveProgress ?? 0;
+    if (current >= limit) return;
+    const timer = window.setTimeout(() => {
+      updateTrip({ liveProgress: Math.min(limit, current + 0.08) });
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [trip, updateTrip]);
 
-  const confirmBooking = () => {
-    const newTrip: Trip = {
-      id: `EM-${Date.now().toString().slice(-6)}`,
-      riderName: "Mai Lan",
-      pickup: "Home · 24 Nguyễn Đình Chiểu",
-      destination: destination.trim(),
-      provider: provider.name,
-      price: provider.price,
-      eta: provider.eta,
-      status: "matching",
-      createdAt: new Date().toISOString(),
-    };
-    setTrip(newTrip);
-  };
-
-  const resetBooking = () => {
-    setTrip(null);
-    setDestination("");
-    setStep("destination");
-  };
+  useEffect(() => {
+    if (!trip) {
+      previousStatus.current = null;
+      return;
+    }
+    if (previousStatus.current && previousStatus.current !== trip.status) {
+      if (trip.status === "driver_assigned") {
+        speak(
+          "Đã có tài xế Minh Quân. Xe màu bạc, biển số 51 H 482 16. Tài xế đến trong 4 phút.",
+        );
+      } else if (trip.status === "driver_arrived") {
+        speak(
+          "Tài xế đã đến. Bạn kiểm tra đúng biển số 51 H 482 16 trước khi lên xe nhé.",
+        );
+      } else if (trip.status === "completed") {
+        speak("Bạn đã đến nơi an toàn. Linh cũng đã nhận được thông báo.");
+      }
+    }
+    previousStatus.current = trip.status;
+  }, [speak, trip]);
 
   if (!ready) return <div className="min-h-screen bg-[#f7f8f5]" />;
 
   return (
-    <main className="min-h-screen bg-[#f7f8f5] text-[#17231d]">
-      <AppHeader
-        rightSlot={
+    <main className="min-h-screen bg-[#f7f8f5] text-[#14261d]">
+      <header className="border-b-2 border-[#dfe7e2] bg-white">
+        <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
           <Link
-            href="/guardian"
-            className="flex items-center gap-2 rounded-full bg-[#eef6f1] px-4 py-2 text-sm font-bold text-[#157347] hover:bg-[#e1f0e7]"
+            href="/"
+            className="flex min-h-12 items-center gap-3 text-xl font-black"
+            aria-label="Về trang chính"
           >
-            <ShieldCheck className="h-4 w-4" />
-            <span className="hidden sm:inline">Guardian view</span>
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#11683f] text-white">
+              <MapPin className="h-6 w-6" />
+            </span>
+            EasyMove
           </Link>
-        }
-      />
+          <div className="flex items-center gap-2 rounded-full bg-[#e8f5ed] px-4 py-2.5 text-base font-bold text-[#11683f]">
+            <ShieldCheck className="h-5 w-5" />
+            Linh đang theo dõi
+          </div>
+        </div>
+      </header>
 
-      {trip ? (
-        <ActiveRide
+      {pendingIntent ? (
+        <ConfirmationScreen
+          intent={pendingIntent}
+          voiceMode={mode}
+          voiceMessage={message}
+          onListen={startListening}
+          onConfirm={confirmIntent}
+          onReject={rejectIntent}
+        />
+      ) : trip ? (
+        <ActiveElderRide
           trip={trip}
-          updateTrip={updateTrip}
-          resetBooking={resetBooking}
+          voiceMode={mode}
+          voiceMessage={message}
+          onListen={startListening}
+          onAdvance={(status) =>
+            updateTrip({
+              status,
+              liveProgress:
+                status === "driver_arrived" || status === "completed"
+                  ? 1
+                  : 0.05,
+            })
+          }
+          onCancel={() => askForConfirmation({ type: "cancel" })}
+          onReset={() => {
+            setTrip(null);
+            resetVoice();
+          }}
         />
       ) : (
-        <section className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:py-12">
-          <div className="mx-auto w-full max-w-2xl lg:mx-0">
-            <div className="mb-8 flex items-center gap-3">
-              {step === "options" && (
-                <button
-                  type="button"
-                  onClick={() => setStep("destination")}
-                  className="grid h-10 w-10 place-items-center rounded-full border border-[#dce3de] bg-white hover:border-[#157347]"
-                  aria-label="Back"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              )}
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#157347]">
-                  Book a ride
-                </p>
-                <h1 className="mt-1 text-4xl font-black tracking-[-0.045em] sm:text-5xl">
-                  {step === "destination"
-                    ? "Where are you going?"
-                    : "Choose your ride"}
-                </h1>
-              </div>
-            </div>
-
-            {step === "destination" ? (
-              <div>
-                <div className="rounded-[1.75rem] border border-[#dce4df] bg-white p-3 shadow-[0_16px_50px_rgba(29,48,38,0.07)]">
-                  <div className="flex items-center gap-3 border-b border-[#edf0ee] px-3 py-4 text-[#65746c]">
-                    <span className="h-3 w-3 rounded-full border-[3px] border-[#157347]" />
-                    <span className="text-sm font-semibold">
-                      Home · 24 Nguyễn Đình Chiểu
-                    </span>
-                  </div>
-                  <label className="flex items-center gap-3 px-3 py-3">
-                    <MapPin
-                      className="h-5 w-5 shrink-0 text-[#e58b31]"
-                      fill="currentColor"
-                    />
-                    <input
-                      value={destination}
-                      onChange={(event) => setDestination(event.target.value)}
-                      onKeyDown={(event) =>
-                        event.key === "Enter" && startBooking()
-                      }
-                      placeholder="Search for a place"
-                      className="h-12 min-w-0 flex-1 bg-transparent text-lg font-semibold outline-none placeholder:text-[#9ba7a0]"
-                      aria-label="Destination"
-                    />
-                    <Search className="h-5 w-5 text-[#8a978f]" />
-                  </label>
-                </div>
-
-                <div className="mt-8">
-                  <p className="mb-3 text-sm font-bold text-[#65746c]">
-                    Saved places
-                  </p>
-                  <div className="space-y-3">
-                    {destinations.map((place) => {
-                      const Icon = place.icon;
-                      return (
-                        <button
-                          type="button"
-                          key={place.name}
-                          onClick={() => setDestination(place.name)}
-                          className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition ${destination === place.name ? "border-[#157347] bg-[#edf7f1]" : "border-[#e2e7e3] bg-white hover:border-[#b5cdbf]"}`}
-                        >
-                          <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#f1f4f2] text-[#4e6257]">
-                            <Icon className="h-5 w-5" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-bold">
-                              {place.name}
-                            </span>
-                            <span className="mt-0.5 block truncate text-sm text-[#748179]">
-                              {place.address}
-                            </span>
-                          </span>
-                          <ArrowRight className="h-5 w-5 text-[#9aa59f]" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={!destination.trim()}
-                  onClick={startBooking}
-                  className="mt-8 flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[#157347] text-lg font-bold text-white shadow-[0_14px_30px_rgba(21,115,71,0.2)] transition hover:bg-[#11623c] disabled:cursor-not-allowed disabled:bg-[#bdc8c1] disabled:shadow-none"
-                >
-                  Find a ride <ArrowRight className="h-5 w-5" />
-                </button>
-              </div>
-            ) : (
-              <div>
-                <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#e0e6e2] bg-white p-4">
-                  <MapPin
-                    className="mt-0.5 h-5 w-5 shrink-0 text-[#e58b31]"
-                    fill="currentColor"
-                  />
-                  <div>
-                    <p className="text-sm text-[#748179]">Going to</p>
-                    <p className="font-bold">{destination}</p>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {providers.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      onClick={() => setSelectedProvider(item.id)}
-                      className={`flex w-full items-center gap-4 rounded-[1.4rem] border-2 bg-white p-4 text-left transition ${selectedProvider === item.id ? "border-[#157347] shadow-[0_10px_30px_rgba(21,115,71,0.09)]" : "border-transparent hover:border-[#d9e3dc]"}`}
-                    >
-                      <span
-                        className={`grid h-14 w-14 place-items-center rounded-2xl ${item.color} text-lg font-black text-white`}
-                      >
-                        {item.name.slice(0, 1)}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2">
-                          <span className="font-bold">{item.name}</span>
-                          {item.note === "Recommended" && (
-                            <span className="rounded-full bg-[#e8f5ed] px-2 py-0.5 text-[11px] font-bold text-[#157347]">
-                              Recommended
-                            </span>
-                          )}
-                        </span>
-                        <span className="mt-1 block text-sm text-[#748179]">
-                          {item.note} · {item.eta} min away
-                        </span>
-                      </span>
-                      <span className="text-right">
-                        <span className="block font-black">
-                          ₫{item.price.toLocaleString("vi-VN")}
-                        </span>
-                        {selectedProvider === item.id && (
-                          <span className="mt-2 ml-auto grid h-5 w-5 place-items-center rounded-full bg-[#157347] text-white">
-                            <Check className="h-3 w-3" />
-                          </span>
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-5 flex items-center justify-between rounded-2xl bg-[#eef4f0] p-4 text-sm">
-                  <span className="flex items-center gap-2 font-semibold">
-                    <ShieldCheck className="h-5 w-5 text-[#157347]" />
-                    Trip shared with Linh
-                  </span>
-                  <span className="text-[#65746c]">Guardian</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={confirmBooking}
-                  className="mt-6 flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[#157347] text-lg font-bold text-white shadow-[0_14px_30px_rgba(21,115,71,0.2)] hover:bg-[#11623c]"
-                >
-                  Book {provider.name} · ₫
-                  {provider.price.toLocaleString("vi-VN")}{" "}
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <aside className="hidden self-start rounded-[2rem] bg-[#21382d] p-7 text-white shadow-[0_20px_55px_rgba(27,55,41,0.16)] lg:block">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/10">
-              <ShieldCheck className="h-6 w-6 text-[#83e3ad]" />
-            </div>
-            <h2 className="mt-7 text-2xl font-bold tracking-tight">
-              Linh is looking out for you
-            </h2>
-            <p className="mt-3 leading-7 text-white/65">
-              Your guardian will see the driver, vehicle and trip progress as
-              soon as you book.
-            </p>
-            <div className="mt-8 flex items-center gap-3 border-t border-white/10 pt-5">
-              <div className="grid h-11 w-11 place-items-center rounded-full bg-[#f4a340] font-black text-[#21382d]">
-                LT
-              </div>
-              <div>
-                <p className="font-bold">Linh Trần</p>
-                <p className="text-sm text-white/55">Daughter · Guardian</p>
-              </div>
-            </div>
-          </aside>
-        </section>
+        <ElderHome
+          voiceMode={mode}
+          voiceMessage={notice || message}
+          onListen={startListening}
+          onChoose={(destination) =>
+            askForConfirmation({ type: "ride", destination })
+          }
+          onCall={() => askForConfirmation({ type: "call" })}
+        />
       )}
     </main>
   );
 }
 
-function ActiveRide({
+function ElderHome({
+  voiceMode,
+  voiceMessage,
+  onListen,
+  onChoose,
+  onCall,
+}: {
+  voiceMode: string;
+  voiceMessage: string;
+  onListen: () => void;
+  onChoose: (destination: string) => void;
+  onCall: () => void;
+}) {
+  const listening = voiceMode === "listening";
+  return (
+    <section className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
+      <div className="text-center">
+        <p className="text-xl font-bold text-[#4d6156]">Chào bà Lan</p>
+        <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
+          Bà muốn đi đâu?
+        </h1>
+        <p className="mt-4 text-xl leading-8 text-[#52655a]">
+          Nhấn nút micro rồi nói, ví dụ: “Đi bệnh viện”
+        </p>
+      </div>
+
+      <div className="mt-8 flex flex-col items-center">
+        <button
+          type="button"
+          onClick={onListen}
+          className={`relative grid h-44 w-44 place-items-center rounded-full border-[10px] text-white shadow-[0_22px_55px_rgba(17,104,63,0.25)] transition active:scale-95 sm:h-52 sm:w-52 ${listening ? "border-[#b8efd0] bg-[#d7473f]" : "border-[#d8efe2] bg-[#11683f]"}`}
+          aria-label={listening ? "Đang nghe" : "Nhấn để nói"}
+        >
+          {listening && (
+            <span className="absolute inset-[-18px] animate-ping rounded-full border-4 border-[#d7473f]/30" />
+          )}
+          <span className="relative flex flex-col items-center gap-2">
+            {voiceMode === "unsupported" ? (
+              <MicOff className="h-14 w-14" />
+            ) : (
+              <Mic className="h-16 w-16" strokeWidth={2.4} />
+            )}
+            <span className="text-xl font-black">
+              {listening ? "ĐANG NGHE" : "NHẤN ĐỂ NÓI"}
+            </span>
+          </span>
+        </button>
+        <output
+          className="mt-6 flex min-h-14 items-center gap-3 rounded-2xl bg-white px-5 py-3 text-center text-lg font-bold text-[#31483c] shadow-sm"
+          aria-live="polite"
+        >
+          <Volume2 className="h-6 w-6 shrink-0 text-[#11683f]" />
+          {voiceMessage}
+        </output>
+      </div>
+
+      <div className="my-8 flex items-center gap-4 text-base font-bold text-[#66786e]">
+        <span className="h-0.5 flex-1 bg-[#dce4df]" />
+        HOẶC CHỌN NÚT
+        <span className="h-0.5 flex-1 bg-[#dce4df]" />
+      </div>
+
+      <div className="space-y-4">
+        {savedPlaces.map((place) => {
+          const Icon = place.icon;
+          return (
+            <button
+              key={place.label}
+              type="button"
+              onClick={() => onChoose(place.destination)}
+              className="flex min-h-24 w-full items-center gap-5 rounded-3xl border-2 border-[#d8e2dc] bg-white p-5 text-left shadow-[0_8px_24px_rgba(31,57,43,0.06)] hover:border-[#11683f] active:scale-[0.99]"
+            >
+              <span
+                className={`grid h-16 w-16 shrink-0 place-items-center rounded-2xl ${place.color}`}
+              >
+                <Icon className="h-8 w-8" strokeWidth={2.4} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-2xl font-black">{place.label}</span>
+                <span className="mt-1 block text-lg text-[#5d7065]">
+                  {place.detail}
+                </span>
+              </span>
+              <span className="text-3xl font-black text-[#839188]">›</span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={onCall}
+          className="flex min-h-24 w-full items-center gap-5 rounded-3xl border-2 border-[#ead8c3] bg-[#fffaf3] p-5 text-left shadow-[0_8px_24px_rgba(31,57,43,0.04)] hover:border-[#c57b2f] active:scale-[0.99]"
+        >
+          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#fff0db] text-[#a75d1d]">
+            <Phone className="h-8 w-8" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-2xl font-black">Gọi cho Linh</span>
+            <span className="mt-1 block text-lg text-[#6c655c]">
+              Con gái · Người thân
+            </span>
+          </span>
+          <span className="text-3xl font-black text-[#9b8b79]">›</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function ConfirmationScreen({
+  intent,
+  voiceMode,
+  voiceMessage,
+  onListen,
+  onConfirm,
+  onReject,
+}: {
+  intent: Exclude<PendingIntent, null>;
+  voiceMode: string;
+  voiceMessage: string;
+  onListen: () => void;
+  onConfirm: () => void;
+  onReject: () => void;
+}) {
+  const isRide = intent.type === "ride";
+  return (
+    <section className="mx-auto flex min-h-[calc(100vh-82px)] w-full max-w-3xl flex-col justify-center px-5 py-10 sm:px-8">
+      <div className="rounded-[2.5rem] border-2 border-[#dbe5df] bg-white p-6 text-center shadow-[0_24px_70px_rgba(29,55,41,0.1)] sm:p-10">
+        <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#e9f5ee] text-[#11683f]">
+          {isRide ? (
+            <MapPin className="h-10 w-10" />
+          ) : intent.type === "call" ? (
+            <Phone className="h-10 w-10" />
+          ) : (
+            <X className="h-10 w-10" />
+          )}
+        </div>
+        <p className="mt-6 text-xl font-bold text-[#54685d]">Xin bà xác nhận</p>
+        <h1 className="mt-3 text-4xl font-black leading-tight tracking-[-0.04em] sm:text-5xl">
+          {isRide ? (
+            <>
+              Đặt xe đi
+              <br />
+              <span className="text-[#11683f]">{intent.destination}</span>?
+            </>
+          ) : intent.type === "call" ? (
+            "Gọi cho Linh?"
+          ) : (
+            "Hủy chuyến xe?"
+          )}
+        </h1>
+        {isRide && (
+          <div className="mx-auto mt-7 grid max-w-lg grid-cols-2 gap-3 rounded-2xl bg-[#f1f5f2] p-4 text-lg">
+            <span className="text-[#5c6d63]">Xe đến sau</span>
+            <strong>Khoảng 4 phút</strong>
+            <span className="text-[#5c6d63]">Giá dự kiến</span>
+            <strong>
+              {intent.destination.includes("Bệnh viện") ? "68.000đ" : "52.000đ"}
+            </strong>
+          </div>
+        )}
+
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-[#11683f] px-5 text-2xl font-black text-white shadow-[0_12px_30px_rgba(17,104,63,0.22)] hover:bg-[#0d5935] active:scale-[0.98]"
+          >
+            <Check className="h-8 w-8" />
+            ĐÚNG
+          </button>
+          <button
+            type="button"
+            onClick={onReject}
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border-2 border-[#cfdad3] bg-white px-5 text-2xl font-black text-[#31483c] hover:border-[#8da396] active:scale-[0.98]"
+          >
+            <X className="h-8 w-8" />
+            KHÔNG
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={onListen}
+          className={`mt-6 inline-flex min-h-14 items-center gap-3 rounded-full px-5 text-lg font-bold ${voiceMode === "listening" ? "bg-[#fde9e7] text-[#b8342e]" : "bg-[#eaf4ee] text-[#11683f]"}`}
+        >
+          <Mic className="h-6 w-6" />
+          {voiceMode === "listening"
+            ? "Tôi đang nghe…"
+            : "Hoặc nói “đúng” / “không”"}
+        </button>
+        <p className="mt-3 text-base text-[#687a70]" aria-live="polite">
+          {voiceMessage}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function ActiveElderRide({
   trip,
-  updateTrip,
-  resetBooking,
+  voiceMode,
+  voiceMessage,
+  onListen,
+  onAdvance,
+  onCancel,
+  onReset,
 }: {
   trip: Trip;
-  updateTrip: (updates: Partial<Trip>) => void;
-  resetBooking: () => void;
+  voiceMode: string;
+  voiceMessage: string;
+  onListen: () => void;
+  onAdvance: (status: TripStatus) => void;
+  onCancel: () => void;
+  onReset: () => void;
 }) {
-  const isFinished = trip.status === "completed" || trip.status === "cancelled";
+  const finished = trip.status === "completed" || trip.status === "cancelled";
   const next = nextStatus[trip.status];
+  const status =
+    trip.status === "matching"
+      ? {
+          eyebrow: "ĐÃ ĐẶT XE",
+          title: "Đang tìm tài xế",
+          detail: "Bà chờ một chút nhé",
+        }
+      : trip.status === "driver_assigned"
+        ? {
+            eyebrow: "TÀI XẾ ĐANG ĐẾN",
+            title: "Còn khoảng 4 phút",
+            detail: "Bà chờ ở cửa nhà",
+          }
+        : trip.status === "driver_arrived"
+          ? {
+              eyebrow: "XE ĐÃ ĐẾN",
+              title: "Kiểm tra đúng biển số",
+              detail: trip.plate ?? "51H-482.16",
+            }
+          : trip.status === "in_progress"
+            ? {
+                eyebrow: "ĐANG ĐI",
+                title: `Đang đến ${trip.destination}`,
+                detail: "Linh đang theo dõi chuyến đi",
+              }
+            : trip.status === "completed"
+              ? {
+                  eyebrow: "ĐÃ ĐẾN NƠI",
+                  title: "Bà đã đến an toàn",
+                  detail: "Linh đã nhận được thông báo",
+                }
+              : {
+                  eyebrow: "ĐÃ HỦY",
+                  title: "Chuyến xe đã hủy",
+                  detail: "Bà có thể đặt lại bất cứ lúc nào",
+                };
 
   return (
-    <section className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1.1fr)_420px] lg:py-10">
-      <div className="relative min-h-[430px] overflow-hidden rounded-[2rem] bg-[#dce8dc] lg:min-h-[650px]">
-        <div className="absolute inset-0 opacity-60 [background-image:linear-gradient(28deg,transparent_46%,#a9bcae_47%,#a9bcae_50%,transparent_51%),linear-gradient(105deg,transparent_48%,#bac9bd_49%,#bac9bd_52%,transparent_53%)] [background-size:120px_96px,150px_118px]" />
-        <svg
-          className="absolute inset-0 h-full w-full"
-          viewBox="0 0 720 620"
-          fill="none"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M108 500C180 440 160 328 298 350C418 370 436 196 612 128"
-            stroke="white"
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <path
-            d="M108 500C180 440 160 328 298 350C418 370 436 196 612 128"
-            stroke="#157347"
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeDasharray="11 12"
-          />
-        </svg>
-        <div className="absolute bottom-[17%] left-[12%] grid h-12 w-12 place-items-center rounded-full border-4 border-white bg-[#157347] text-white shadow-xl">
-          <Home className="h-5 w-5" />
+    <section className="mx-auto w-full max-w-4xl px-5 py-7 sm:px-8 sm:py-10">
+      <div
+        className={`rounded-[2.2rem] p-6 text-center text-white shadow-[0_22px_55px_rgba(20,54,37,0.18)] sm:p-9 ${trip.status === "cancelled" ? "bg-[#5c6660]" : "bg-[#183d2c]"}`}
+      >
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white/12">
+          {trip.status === "completed" ? (
+            <Check className="h-9 w-9 text-[#8ce0b0]" />
+          ) : (
+            <Navigation className="h-8 w-8 text-[#8ce0b0]" />
+          )}
         </div>
-        <div className="absolute right-[10%] top-[14%] grid h-12 w-12 place-items-center rounded-full border-4 border-white bg-[#f2a243] text-[#20372c] shadow-xl">
-          <MapPin className="h-6 w-6" fill="currentColor" />
-        </div>
-        {trip.status !== "matching" && (
-          <div className="absolute left-[42%] top-[45%] grid h-14 w-14 place-items-center rounded-2xl bg-[#20372c] text-white shadow-2xl">
-            <Navigation className="h-6 w-6 rotate-45" fill="currentColor" />
-          </div>
-        )}
-        <div className="absolute left-5 top-5 rounded-2xl bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#748179]">
-            Destination
-          </p>
-          <p className="mt-1 font-bold">{trip.destination}</p>
-        </div>
+        <p className="mt-5 text-lg font-black tracking-[0.12em] text-[#9fe2bb]">
+          {status.eyebrow}
+        </p>
+        <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
+          {status.title}
+        </h1>
+        <p className="mt-3 text-xl font-semibold text-white/75">
+          {status.detail}
+        </p>
       </div>
 
-      <div className="self-start rounded-[2rem] border border-[#dde4df] bg-white p-6 shadow-[0_18px_55px_rgba(29,48,38,0.09)] sm:p-7">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-[0.13em] text-[#157347]">
-              {statusCopy[trip.status]}
-            </p>
-            <h1 className="mt-2 text-3xl font-black tracking-[-0.04em]">
-              {trip.status === "matching"
-                ? "One moment…"
-                : trip.status === "completed"
-                  ? "You’re here!"
-                  : trip.status === "cancelled"
-                    ? "Ride cancelled"
-                    : trip.status === "in_progress"
-                      ? "On the way"
-                      : `${trip.eta} min away`}
-            </h1>
+      {!finished && (
+        <div className="mt-5 overflow-hidden rounded-3xl border-2 border-[#d7e2dc] bg-white shadow-[0_10px_32px_rgba(29,55,41,0.07)]">
+          <LiveTripMap trip={trip} compact />
+          <div className="flex items-center justify-between gap-4 p-4 text-lg">
+            <span className="font-bold text-[#52665b]">Đang đến</span>
+            <strong className="text-right">{trip.destination}</strong>
           </div>
-          <span
-            className={`mt-2 h-3 w-3 rounded-full ${isFinished ? "bg-[#9ca8a1]" : "animate-pulse bg-[#42bc78] shadow-[0_0_0_7px_rgba(66,188,120,0.13)]"}`}
-          />
         </div>
+      )}
 
-        {trip.status === "matching" ? (
-          <div className="my-10 flex items-center justify-center">
-            <span className="h-16 w-16 animate-spin rounded-full border-4 border-[#dcebe2] border-t-[#157347]" />
-          </div>
-        ) : (
-          trip.driverName && (
-            <div className="my-7 flex items-center gap-4 rounded-2xl bg-[#f2f6f3] p-4">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-[#20372c] text-lg font-black text-white">
-                MQ
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-bold">{trip.driverName}</p>
-                  <span className="flex items-center text-sm font-bold">
-                    <Star className="mr-1 h-3.5 w-3.5 fill-[#e99b3d] text-[#e99b3d]" />
-                    4.9
-                  </span>
-                </div>
-                <p className="mt-1 truncate text-sm text-[#6e7d75]">
-                  {trip.vehicle} · <strong>{trip.plate}</strong>
-                </p>
-              </div>
+      {!finished && trip.driverName && (
+        <div className="mt-5 rounded-3xl border-2 border-[#dce5df] bg-white p-5 shadow-[0_10px_32px_rgba(29,55,41,0.07)] sm:p-6">
+          <div className="flex items-center gap-5">
+            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-[#e7f2eb] text-2xl font-black text-[#11683f]">
+              MQ
             </div>
-          )
-        )}
-
-        <div className="space-y-3 border-y border-[#e8ece9] py-5 text-sm">
-          <div className="flex items-center gap-3">
-            <Clock3 className="h-5 w-5 text-[#718078]" />
-            <span className="flex-1 text-[#718078]">Estimated arrival</span>
-            <strong>{trip.eta} min</strong>
+            <div className="min-w-0 flex-1">
+              <p className="text-lg text-[#5b6c62]">Tài xế của bà</p>
+              <h2 className="text-3xl font-black">{trip.driverName}</h2>
+              <p className="mt-1 text-xl font-bold text-[#40574b]">
+                {trip.vehicle}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <ShieldCheck className="h-5 w-5 text-[#157347]" />
-            <span className="flex-1 text-[#718078]">Guardian</span>
-            <strong>Sharing with Linh</strong>
+          <div className="mt-5 rounded-2xl bg-[#fff4df] p-4 text-center">
+            <p className="text-base font-bold text-[#6c5b3d]">BIỂN SỐ XE</p>
+            <p className="mt-1 text-4xl font-black tracking-[0.08em] text-[#322a1e]">
+              {trip.plate}
+            </p>
           </div>
         </div>
+      )}
 
-        {!isFinished && trip.status !== "matching" && (
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <a
-              href="tel:+84901234567"
-              className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#edf4f0] font-bold text-[#264638]"
-            >
-              <Phone className="h-4 w-4" />
-              Call
-            </a>
-            <a
-              href="sms:+84901234567"
-              className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#edf4f0] font-bold text-[#264638]"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Message
-            </a>
-          </div>
-        )}
-        {next && (
+      {!finished && (
+        <div className="mt-5 grid grid-cols-2 gap-4">
+          <a
+            href="tel:+84901234567"
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border-2 border-[#d9e3dd] bg-white text-xl font-black text-[#234436]"
+          >
+            <Phone className="h-7 w-7" />
+            Gọi tài xế
+          </a>
+          <a
+            href="tel:+84909876543"
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border-2 border-[#d9e3dd] bg-white text-xl font-black text-[#234436]"
+          >
+            <HeartHandshake className="h-7 w-7" />
+            Gọi Linh
+          </a>
+        </div>
+      )}
+
+      {next && (
+        <button
+          type="button"
+          onClick={() => onAdvance(next)}
+          className="mt-5 min-h-20 w-full rounded-2xl bg-[#11683f] px-5 text-2xl font-black text-white shadow-[0_12px_30px_rgba(17,104,63,0.18)]"
+        >
+          {nextAction[trip.status]}
+        </button>
+      )}
+
+      {!finished && (
+        <div className="mt-5 grid grid-cols-[1fr_auto] gap-4">
           <button
             type="button"
-            onClick={() => updateTrip({ status: next })}
-            className="mt-5 h-14 w-full rounded-2xl bg-[#157347] text-base font-bold text-white hover:bg-[#11623c]"
+            onClick={onListen}
+            className={`flex min-h-16 items-center justify-center gap-3 rounded-2xl px-4 text-lg font-black ${voiceMode === "listening" ? "bg-[#fde8e6] text-[#b6352f]" : "bg-[#e7f3ec] text-[#11683f]"}`}
           >
-            {nextAction[trip.status]}
+            <Mic className="h-7 w-7" />
+            {voiceMode === "listening" ? "Đang nghe…" : "Nói yêu cầu"}
           </button>
-        )}
-        {!isFinished && (
-          <button
-            type="button"
-            onClick={() => updateTrip({ status: "cancelled" })}
-            className="mt-3 h-11 w-full text-sm font-bold text-[#b44b43] hover:text-[#8e302a]"
+          <a
+            href="tel:112"
+            className="flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#cf332e] px-5 text-xl font-black text-white"
           >
-            Cancel ride
-          </button>
-        )}
-        {isFinished && (
-          <button
-            type="button"
-            onClick={resetBooking}
-            className="mt-6 h-14 w-full rounded-2xl bg-[#157347] text-base font-bold text-white hover:bg-[#11623c]"
-          >
-            Book another ride
-          </button>
-        )}
-      </div>
+            <Siren className="h-7 w-7" />
+            SOS
+          </a>
+        </div>
+      )}
+      {!finished && (
+        <p
+          className="mt-3 text-center text-base text-[#63766b]"
+          aria-live="polite"
+        >
+          {voiceMessage}
+        </p>
+      )}
+      {!finished && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="mt-3 min-h-14 w-full text-lg font-bold text-[#a6423c]"
+        >
+          Hủy chuyến xe
+        </button>
+      )}
+
+      {finished && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="mt-6 min-h-20 w-full rounded-2xl bg-[#11683f] text-2xl font-black text-white"
+        >
+          Đặt chuyến mới
+        </button>
+      )}
+
+      {!finished && (
+        <div className="mt-6 flex items-center justify-center gap-3 rounded-2xl bg-[#e8f5ed] p-4 text-lg font-bold text-[#11683f]">
+          <ShieldCheck className="h-6 w-6" />
+          Linh đang thấy toàn bộ chuyến đi của bà
+        </div>
+      )}
     </section>
   );
 }

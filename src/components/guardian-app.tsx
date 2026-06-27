@@ -6,16 +6,14 @@ import {
   ChevronRight,
   Clock3,
   HeartHandshake,
-  Home,
-  MapPin,
   MessageCircle,
-  Navigation,
   Phone,
   Star,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
+import { LiveTripMap } from "@/components/live-trip-map";
 import { useTripSync } from "@/hooks/use-trip-sync";
 import { statusCopy, type Trip, type TripStatus } from "@/lib/trip";
 
@@ -151,40 +149,8 @@ function ActiveGuardianTrip({
           </div>
         </div>
 
-        <div className="relative h-[390px] overflow-hidden bg-[#dce8dc] sm:h-[480px]">
-          <div className="absolute inset-0 opacity-60 [background-image:linear-gradient(28deg,transparent_46%,#a9bcae_47%,#a9bcae_50%,transparent_51%),linear-gradient(105deg,transparent_48%,#bac9bd_49%,#bac9bd_52%,transparent_53%)] [background-size:120px_96px,150px_118px]" />
-          <svg
-            className="absolute inset-0 h-full w-full"
-            viewBox="0 0 720 480"
-            fill="none"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M90 404C174 370 166 250 286 274C408 298 428 150 628 82"
-              stroke="white"
-              strokeWidth="12"
-              strokeLinecap="round"
-            />
-            <path
-              d="M90 404C174 370 166 250 286 274C408 298 428 150 628 82"
-              stroke="#157347"
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeDasharray="11 12"
-            />
-          </svg>
-          <div className="absolute bottom-[11%] left-[8%] grid h-12 w-12 place-items-center rounded-full border-4 border-white bg-[#157347] text-white shadow-xl">
-            <Home className="h-5 w-5" />
-          </div>
-          <div className="absolute right-[7%] top-[10%] grid h-12 w-12 place-items-center rounded-full border-4 border-white bg-[#f2a243] text-[#20372c] shadow-xl">
-            <MapPin className="h-6 w-6" fill="currentColor" />
-          </div>
-          {trip.status !== "matching" && (
-            <div className="absolute left-[43%] top-[48%] grid h-14 w-14 place-items-center rounded-2xl bg-[#20372c] text-white shadow-2xl">
-              <Navigation className="h-6 w-6 rotate-45" fill="currentColor" />
-            </div>
-          )}
+        <div className="relative">
+          <LiveTripMap trip={trip} />
           <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-[350px]">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#748179]">

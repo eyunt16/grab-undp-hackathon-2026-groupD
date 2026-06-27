@@ -18,7 +18,15 @@ export type Trip = {
   driverName?: string;
   plate?: string;
   vehicle?: string;
+  pickupLocation?: GeoPoint;
+  destinationLocation?: GeoPoint;
+  liveProgress?: number;
   createdAt: string;
+};
+
+export type GeoPoint = {
+  lat: number;
+  lng: number;
 };
 
 export const TRIP_STORAGE_KEY = "easymove.current-trip.v2";
