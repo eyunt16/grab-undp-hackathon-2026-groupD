@@ -56,8 +56,8 @@ const stageSubPrompts: Record<RiderStage, string> = {
     The rider is not in a trip and has no pending confirmation.
     Accept only:
     - "ride" when the user asks to go to one exact saved destination.
-    - "call" when the user asks to call Linh or family.
-    If the user talks off this current stage, reject with type "unknown" and tell the rider in Vietnamese that they should follow the current on-screen guide: choose Nha, Benh vien, Dai hoc, Nha Linh, or call Linh.
+    For a valid "ride" request, replyText must contain only the booking information and ask for confirmation. Mention the matched destination and ask whether it is correct. Do not add guidance, alternatives, explanations, or extra services.
+    If the user talks off this current stage, reject with type "unknown" and tell the rider in Vietnamese that they should follow the current on-screen guide: choose Nha, Benh vien, Dai hoc, Nha Linh.
   `,
   confirm_booking: `
     STAGE SUB-PROMPT: confirm_booking
@@ -126,7 +126,7 @@ export function buildRiderVoicePrompt({
     - If type "reject": user says no, stop, never mind, or go back.
     - If type "call": user asks to call Linh, daughter, child, relative, or family.
     - If type "cancel": user asks to cancel the ride.
-    - If type "ride": use for destinations. Map "go home" to "Nha - 24 Nguyen Dinh Chieu", "hospital" to "Benh vien Cho Ray", "school", "class", "university", "di hoc", or "đi học" to "Đại học quốc gia TP.HCM", and "Linh's home" to "Nha Linh - 88 Vo Van Tan".
+    - If type "ride": use for destinations. Map "go home" to "Nha - 24 Nguyen Dinh Chieu", "hospital" to "Benh vien Cho Ray", "school", "class", "university", "di hoc" to "Đại học quốc gia TP.HCM", and "Linh's home" to "Nha Linh - 88 Vo Van Tan".
     - For "unknown" commands, replyText must politely say in Vietnamese that the app cannot process anything outside the allowed action for the current stage and that the rider should follow the current on-screen guide.
     - replyText must be a short polite Vietnamese sentence that can be read aloud.
     - For type "ride", destination must be the exact matching array item.
