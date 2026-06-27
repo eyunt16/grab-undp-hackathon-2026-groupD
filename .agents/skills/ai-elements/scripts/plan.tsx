@@ -1,5 +1,6 @@
-'use client';
+"use client";
 
+import { FileText } from "lucide-react";
 import {
   Plan,
   PlanAction,
@@ -9,9 +10,8 @@ import {
   PlanHeader,
   PlanTitle,
   PlanTrigger,
-} from '@/components/ai-elements/plan';
-import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+} from "@/components/ai-elements/plan";
+import { Button } from "@/components/ui/button";
 
 const Example = () => (
   <Plan defaultOpen={false}>

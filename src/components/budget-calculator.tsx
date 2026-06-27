@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
 import {
-  DollarSign,
-  Users,
   Award,
-  TrendingUp,
-  ShieldAlert,
   CheckCircle2,
-  TrendingDown,
+  DollarSign,
   HelpCircle,
+  ShieldAlert,
+  TrendingDown,
+  TrendingUp,
+  Users,
 } from "lucide-react";
+import React, { useState } from "react";
 
 export default function BudgetCalculator() {
   // Inputs

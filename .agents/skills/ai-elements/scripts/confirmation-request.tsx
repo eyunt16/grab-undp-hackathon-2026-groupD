@@ -1,5 +1,7 @@
-'use client';
+"use client";
 
+import { CheckIcon, XIcon } from "lucide-react";
+import { nanoid } from "nanoid";
 import {
   Confirmation,
   ConfirmationAccepted,
@@ -8,9 +10,7 @@ import {
   ConfirmationRejected,
   ConfirmationRequest,
   ConfirmationTitle,
-} from '@/components/ai-elements/confirmation';
-import { CheckIcon, XIcon } from 'lucide-react';
-import { nanoid } from 'nanoid';
+} from "@/components/ai-elements/confirmation";
 
 const handleReject = () => {
   // In production, call respondToConfirmationRequest with approved: false

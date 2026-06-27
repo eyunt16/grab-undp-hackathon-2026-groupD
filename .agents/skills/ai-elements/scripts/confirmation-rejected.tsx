@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
+import { CheckIcon, XIcon } from "lucide-react";
+import { nanoid } from "nanoid";
 import {
   Confirmation,
   ConfirmationAccepted,
   ConfirmationRejected,
   ConfirmationRequest,
   ConfirmationTitle,
-} from '@/components/ai-elements/confirmation';
-import { CheckIcon, XIcon } from 'lucide-react';
-import { nanoid } from 'nanoid';
+} from "@/components/ai-elements/confirmation";
 
 const Example = () => (
   <div className="w-full max-w-2xl">
@@ -18,7 +18,7 @@ const Example = () => (
     >
       <ConfirmationTitle>
         <ConfirmationRequest>
-          This tool wants to delete the file{' '}
+          This tool wants to delete the file{" "}
           <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
             /tmp/example.txt
           </code>

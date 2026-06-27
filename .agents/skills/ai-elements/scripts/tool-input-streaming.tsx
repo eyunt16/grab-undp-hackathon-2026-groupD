@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
+import { nanoid } from "nanoid";
 import {
   Tool,
   ToolContent,
   ToolHeader,
   ToolInput,
-} from '@/components/ai-elements/tool';
-import { nanoid } from 'nanoid';
+} from "@/components/ai-elements/tool";
 
 const toolCall = {
   errorText: undefined,
   input: {
     include_snippets: true,
     max_results: 10,
-    query: 'latest AI market trends 2024',
+    query: "latest AI market trends 2024",
   },
   output: undefined,
-  state: 'input-streaming' as const,
+  state: "input-streaming" as const,
   toolCallId: nanoid(),
-  type: 'tool-web_search' as const,
+  type: "tool-web_search" as const,
 };
 
 const Example = () => (
-  <div style={{ height: '500px' }}>
+  <div style={{ height: "500px" }}>
     <Tool>
       <ToolHeader state={toolCall.state} type={toolCall.type} />
       <ToolContent>
