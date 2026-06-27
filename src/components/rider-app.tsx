@@ -350,7 +350,7 @@ function ElderHome({
       <div className="text-center">
         <p className="text-xl font-bold text-[#4d6156]">Chào bà Lan</p>
         <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
-          Bà muốn đi đâu?
+          Bạn cần tôi giúp gì?
         </h1>
         <p className="mt-4 text-xl leading-8 text-[#52655a]">
           Nhấn nút micro rồi nói, ví dụ: “Đi bệnh viện”
@@ -551,39 +551,39 @@ function ActiveElderRide({
   const status =
     trip.status === "matching"
       ? {
-          eyebrow: "ĐÃ ĐẶT XE",
-          title: "Đang tìm tài xế",
-          detail: "Bà chờ một chút nhé",
-        }
+        eyebrow: "ĐÃ ĐẶT XE",
+        title: "Đang tìm tài xế",
+        detail: "Bà chờ một chút nhé",
+      }
       : trip.status === "driver_assigned"
         ? {
-            eyebrow: "TÀI XẾ ĐANG ĐẾN",
-            title: "Còn khoảng 4 phút",
-            detail: "Bà chờ ở cửa nhà",
-          }
+          eyebrow: "TÀI XẾ ĐANG ĐẾN",
+          title: "Còn khoảng 4 phút",
+          detail: "Bà chờ ở cửa nhà",
+        }
         : trip.status === "driver_arrived"
           ? {
-              eyebrow: "XE ĐÃ ĐẾN",
-              title: "Kiểm tra đúng biển số",
-              detail: trip.plate ?? "51H-482.16",
-            }
+            eyebrow: "XE ĐÃ ĐẾN",
+            title: "Kiểm tra đúng biển số",
+            detail: trip.plate ?? "51H-482.16",
+          }
           : trip.status === "in_progress"
             ? {
-                eyebrow: "ĐANG ĐI",
-                title: `Đang đến ${trip.destination}`,
-                detail: "Linh đang theo dõi chuyến đi",
-              }
+              eyebrow: "ĐANG ĐI",
+              title: `Đang đến ${trip.destination}`,
+              detail: "Linh đang theo dõi chuyến đi",
+            }
             : trip.status === "completed"
               ? {
-                  eyebrow: "ĐÃ ĐẾN NƠI",
-                  title: "Bà đã đến an toàn",
-                  detail: "Linh đã nhận được thông báo",
-                }
+                eyebrow: "ĐÃ ĐẾN NƠI",
+                title: "Bà đã đến an toàn",
+                detail: "Linh đã nhận được thông báo",
+              }
               : {
-                  eyebrow: "ĐÃ HỦY",
-                  title: "Chuyến xe đã hủy",
-                  detail: "Bà có thể đặt lại bất cứ lúc nào",
-                };
+                eyebrow: "ĐÃ HỦY",
+                title: "Chuyến xe đã hủy",
+                detail: "Bà có thể đặt lại bất cứ lúc nào",
+              };
 
   return (
     <section className="mx-auto w-full max-w-4xl px-5 py-7 sm:px-8 sm:py-10">
