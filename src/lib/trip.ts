@@ -33,10 +33,10 @@ export const TRIP_STORAGE_KEY = "easymove.current-trip.v2";
 export const TRIP_CHANNEL = "easymove-trip-sync-v2";
 
 export const statusCopy: Record<TripStatus, string> = {
-  matching: "Finding a driver",
-  driver_assigned: "Driver is on the way",
-  driver_arrived: "Driver has arrived",
-  in_progress: "Trip in progress",
-  completed: "Arrived safely",
-  cancelled: "Trip cancelled",
+  matching: "Đang tìm tài xế",
+  driver_assigned: "Tài xế đang đến",
+  driver_arrived: "Tài xế đã đến điểm đón",
+  in_progress: "Đang di chuyển",
+  completed: "Đã đến nơi an toàn",
+  cancelled: "Chuyến xe đã hủy",
 };

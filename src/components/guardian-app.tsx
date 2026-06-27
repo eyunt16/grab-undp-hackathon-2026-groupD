@@ -18,10 +18,10 @@ import { useTripSync } from "@/hooks/use-trip-sync";
 import { statusCopy, type Trip, type TripStatus } from "@/lib/trip";
 
 const timeline: { status: TripStatus; label: string }[] = [
-  { status: "driver_assigned", label: "Driver confirmed" },
-  { status: "driver_arrived", label: "Driver at pickup" },
-  { status: "in_progress", label: "Trip started" },
-  { status: "completed", label: "Arrived safely" },
+  { status: "driver_assigned", label: "Tài xế đã nhận chuyến" },
+  { status: "driver_arrived", label: "Tài xế đã đến điểm đón" },
+  { status: "in_progress", label: "Bắt đầu chuyến đi" },
+  { status: "completed", label: "Đã đến nơi an toàn" },
 ];
 
 const statusOrder: Record<TripStatus, number> = {
@@ -59,20 +59,20 @@ export function GuardianApp() {
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#157347]">
-              Guardian dashboard
+              Giám sát người thân
             </p>
             <h1 className="mt-2 text-4xl font-black tracking-[-0.045em]">
-              Good morning, Linh
+              Chào Linh
             </h1>
             <p className="mt-2 text-[#6a7971]">
-              Here’s Mai Lan’s latest trip update.
+              Dưới đây là thông tin cập nhật chuyến đi mới nhất của bà Mai Lan.
             </p>
           </div>
           <Link
             href="/ride"
             className="flex h-11 items-center justify-center gap-2 rounded-full border border-[#cad7cf] bg-white px-5 text-sm font-bold text-[#315344] hover:border-[#157347]"
           >
-            Open rider app <ChevronRight className="h-4 w-4" />
+            Mở ứng dụng đặt xe <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
 
@@ -96,17 +96,16 @@ function EmptyGuardian() {
           <HeartHandshake className="h-9 w-9" />
         </div>
         <h2 className="mt-6 text-3xl font-black tracking-tight">
-          No active trip
+          Không có chuyến đi hoạt động
         </h2>
         <p className="mt-3 max-w-md leading-7 text-[#6f7e76]">
-          When Mai Lan books a ride, the driver details and live progress will
-          appear here automatically.
+          Khi bà Mai Lan đặt chuyến đi, thông tin tài xế và lộ trình trực tiếp sẽ tự động xuất hiện ở đây.
         </p>
         <Link
           href="/ride"
           className="mt-7 flex h-12 items-center gap-2 rounded-xl bg-[#157347] px-6 font-bold text-white hover:bg-[#11623c]"
         >
-          Book a ride for Mai Lan <ChevronRight className="h-4 w-4" />
+          Đặt xe hộ bà Mai Lan <ChevronRight className="h-4 w-4" />
         </Link>
       </section>
       <PersonCard />
@@ -133,7 +132,7 @@ function ActiveGuardianTrip({
               ML
             </div>
             <div>
-              <p className="text-sm text-[#75827b]">Mai Lan’s trip</p>
+              <p className="text-sm text-[#75827b]">Chuyến đi của bà Mai Lan</p>
               <h2 className="mt-0.5 text-2xl font-black tracking-tight">
                 {statusCopy[trip.status]}
               </h2>
@@ -145,7 +144,7 @@ function ActiveGuardianTrip({
             <span
               className={`h-2 w-2 rounded-full ${isActive ? "animate-pulse bg-[#27a963]" : "bg-[#89958e]"}`}
             />
-            {isActive ? "Live" : "Updated"}
+            {isActive ? "Trực tiếp" : "Đã cập nhật"}
           </div>
         </div>
 
@@ -154,13 +153,13 @@ function ActiveGuardianTrip({
           <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-[350px]">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#748179]">
-                Heading to
+                Điểm đến
               </p>
               <p className="mt-1 font-bold">{trip.destination}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-[#748179]">ETA</p>
-              <p className="font-black">{trip.eta} min</p>
+              <p className="text-xs text-[#748179]">Thời gian đón</p>
+              <p className="font-black">{trip.eta} phút</p>
             </div>
           </div>
         </div>
@@ -170,7 +169,7 @@ function ActiveGuardianTrip({
         <PersonCard />
 
         <section className="rounded-[1.75rem] border border-[#dde4df] bg-white p-6 shadow-[0_14px_42px_rgba(29,48,38,0.05)]">
-          <h3 className="font-black">Trip details</h3>
+          <h3 className="font-black">Chi tiết chuyến đi</h3>
           <div className="mt-5 space-y-4">
             {trip.driverName ? (
               <div className="flex items-center gap-3">
@@ -193,12 +192,12 @@ function ActiveGuardianTrip({
             ) : (
               <div className="flex items-center gap-3 text-[#6f7e76]">
                 <span className="h-11 w-11 animate-pulse rounded-full bg-[#e6ece8]" />
-                <span className="font-semibold">Finding a nearby driver…</span>
+                <span className="font-semibold">Đang tìm tài xế gần đây…</span>
               </div>
             )}
             <div className="flex items-center gap-3 border-t border-[#e9edea] pt-4">
               <Clock3 className="h-5 w-5 text-[#157347]" />
-              <span className="flex-1 text-sm text-[#6f7e76]">Booked ride</span>
+              <span className="flex-1 text-sm text-[#6f7e76]">Giá cước chuyến xe</span>
               <strong className="text-sm">
                 ₫{trip.price.toLocaleString("vi-VN")}
               </strong>
@@ -211,21 +210,21 @@ function ActiveGuardianTrip({
                 className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#edf4f0] text-sm font-bold text-[#264638]"
               >
                 <Phone className="h-4 w-4" />
-                Call driver
+                Gọi tài xế
               </a>
               <a
                 href="sms:+84901234567"
                 className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#edf4f0] text-sm font-bold text-[#264638]"
               >
                 <MessageCircle className="h-4 w-4" />
-                Message
+                Nhắn tin
               </a>
             </div>
           )}
         </section>
 
         <section className="rounded-[1.75rem] border border-[#dde4df] bg-white p-6 shadow-[0_14px_42px_rgba(29,48,38,0.05)]">
-          <h3 className="font-black">Trip progress</h3>
+          <h3 className="font-black">Tiến trình chuyến đi</h3>
           <div className="mt-5 space-y-0">
             {timeline.map((item, index) => {
               const complete = currentOrder >= statusOrder[item.status];
@@ -259,7 +258,7 @@ function ActiveGuardianTrip({
               onClick={() => updateTrip({ status: "cancelled" })}
               className="mt-6 h-11 w-full rounded-xl border border-[#eccdca] text-sm font-bold text-[#ad4b43] hover:bg-[#fff5f4]"
             >
-              Cancel this ride
+              Hủy chuyến xe này
             </button>
           )}
         </section>
@@ -277,18 +276,18 @@ function PersonCard() {
         </div>
         <span className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-[#bce8cd]">
           <span className="h-2 w-2 rounded-full bg-[#70d79c]" />
-          Connected
+          Đã kết nối
         </span>
       </div>
-      <p className="mt-6 text-sm text-white/55">You’re looking after</p>
-      <h2 className="mt-1 text-2xl font-black">Mai Lan</h2>
-      <p className="mt-2 text-sm text-white/65">Mother · +84 90 123 4567</p>
+      <p className="mt-6 text-sm text-white/55">Thành viên đang bảo hộ</p>
+      <h2 className="mt-1 text-2xl font-black">Bà Mai Lan</h2>
+      <p className="mt-2 text-sm text-white/65">Mẹ · +84 90 123 4567</p>
       <a
         href="tel:+84901234567"
         className="mt-6 flex h-11 items-center justify-center gap-2 rounded-xl bg-white font-bold text-[#21382d] hover:bg-[#eef5f0]"
       >
         <Phone className="h-4 w-4" />
-        Call Mai Lan
+        Gọi cho bà Mai Lan
       </a>
     </section>
   );

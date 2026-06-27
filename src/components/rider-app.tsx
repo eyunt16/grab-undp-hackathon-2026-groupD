@@ -66,10 +66,12 @@ const destinationLocations: Record<string, { lat: number; lng: number }> = {
 
 function normalizeVietnamese(value: string) {
   return value
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d")
-    .toLowerCase();
+    .replace(/[.,?!]/g, "")
+    .trim();
 }
 
 export function RiderApp() {
@@ -82,18 +84,32 @@ export function RiderApp() {
   const confirmIntentRef = useRef<() => void>(() => undefined);
   const rejectIntentRef = useRef<() => void>(() => undefined);
 
+  // Conversation history log state
+  const [history, setHistory] = useState<Array<{ sender: "user" | "bot"; text: string }>>([
+    { sender: "bot", text: "Chào bà Lan, bạn cần tôi giúp gì?" }
+  ]);
+
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [history]);
+
   const handleVoiceCommand = useCallback((rawTranscript: string) => {
     voiceInitiatedRef.current = true;
     const command = normalizeVietnamese(rawTranscript);
-    const isYes = /\b(dung|dong y|xac nhan|dat xe|co)\b/.test(command);
-    const isNo = /\b(khong|quay lai|thoi)\b/.test(command);
+    
+    // Add user voice command to history
+    setHistory(prev => [...prev, { sender: "user", text: rawTranscript }]);
 
-    if (isYes) {
-      confirmIntentRef.current();
-      return;
-    }
+    const isYes = /\b(dung|dong y|xac nhan|dat xe|co|phai|u|duoc|ok)\b/.test(command);
+    const isNo = /\b(khong|quay lai|thoi|huy|sai|nham)\b/.test(command);
+
     if (isNo) {
       rejectIntentRef.current();
+      return;
+    }
+    if (isYes) {
+      confirmIntentRef.current();
       return;
     }
     if (/goi.*(linh|con|nguoi than)/.test(command)) {
@@ -133,6 +149,18 @@ export function RiderApp() {
   const { mode, message, startListening, speak, resetVoice } =
     useVietnameseVoice(handleVoiceCommand);
 
+  // Wrapper to speak and also log bot responses
+  const speakAndLog = useCallback((text: string, listenAfter = false) => {
+    setHistory(prev => {
+      // Avoid duplicate logs of the exact same bot response
+      if (prev.length > 0 && prev[prev.length - 1].sender === "bot" && prev[prev.length - 1].text === text) {
+        return prev;
+      }
+      return [...prev, { sender: "bot", text }];
+    });
+    speak(text, listenAfter);
+  }, [speak]);
+
   const askForConfirmation = useCallback(
     (intent: Exclude<PendingIntent, null>) => {
       setPendingIntent(intent);
@@ -146,22 +174,22 @@ export function RiderApp() {
     if (!pendingIntent) return;
     navigator.vibrate?.([60, 40, 60]);
     if (pendingIntent.type === "ride") {
-      speak(
+      speakAndLog(
         `Bạn muốn đặt xe đi ${pendingIntent.destination}. Đúng không?`,
         voiceInitiatedRef.current,
       );
     } else if (pendingIntent.type === "call") {
-      speak(
+      speakAndLog(
         "Bạn muốn gọi cho con gái Linh. Đúng không?",
         voiceInitiatedRef.current,
       );
     } else {
-      speak(
+      speakAndLog(
         "Bạn muốn hủy chuyến xe này. Đúng không?",
         voiceInitiatedRef.current,
       );
     }
-  }, [pendingIntent, speak]);
+  }, [pendingIntent, speakAndLog]);
 
   const createTrip = useCallback(
     (destination: string) => {
@@ -184,9 +212,9 @@ export function RiderApp() {
       setTrip(newTrip);
       setPendingIntent(null);
       resetVoice();
-      speak("Đã đặt xe. EasyMove đang tìm tài xế gần bạn.");
+      speakAndLog("Đã đặt xe. EasyMove đang tìm tài xế gần bạn.");
     },
-    [resetVoice, setTrip, speak],
+    [resetVoice, setTrip, speakAndLog],
   );
 
   const confirmIntent = useCallback(() => {
@@ -195,22 +223,22 @@ export function RiderApp() {
       createTrip(pendingIntent.destination);
     } else if (pendingIntent.type === "call") {
       setPendingIntent(null);
-      speak("Đang mở cuộc gọi cho Linh.");
+      speakAndLog("Đang mở cuộc gọi cho Linh.");
       window.location.href = "tel:+84901234567";
     } else {
       updateTrip({ status: "cancelled" });
       setPendingIntent(null);
       resetVoice();
-      speak("Chuyến xe đã được hủy.");
+      speakAndLog("Chuyến xe đã được hủy.");
     }
-  }, [createTrip, pendingIntent, resetVoice, speak, updateTrip]);
+  }, [createTrip, pendingIntent, resetVoice, speakAndLog, updateTrip]);
 
   const rejectIntent = useCallback(() => {
     setPendingIntent(null);
     resetVoice();
     setNotice("Đã quay lại. Bạn chọn nơi muốn đến nhé.");
-    speak("Được rồi. Bạn chọn lại nhé.");
-  }, [resetVoice, speak]);
+    speakAndLog("Được rồi. Bạn chọn lại nhé.");
+  }, [resetVoice, speakAndLog]);
 
   useEffect(() => {
     confirmIntentRef.current = confirmIntent;
@@ -249,19 +277,40 @@ export function RiderApp() {
     }
     if (previousStatus.current && previousStatus.current !== trip.status) {
       if (trip.status === "driver_assigned") {
-        speak(
+        speakAndLog(
           "Đã có tài xế Minh Quân. Xe màu bạc, biển số 51 H 482 16. Tài xế đến trong 4 phút.",
         );
       } else if (trip.status === "driver_arrived") {
-        speak(
+        speakAndLog(
           "Tài xế đã đến. Bạn kiểm tra đúng biển số 51 H 482 16 trước khi lên xe nhé.",
         );
       } else if (trip.status === "completed") {
-        speak("Bạn đã đến nơi an toàn. Linh cũng đã nhận được thông báo.");
+        speakAndLog("Bạn đã đến nơi an toàn. Linh cũng đã nhận được thông báo.");
       }
     }
     previousStatus.current = trip.status;
-  }, [speak, trip]);
+  }, [speakAndLog, trip]);
+
+  // Click handler wrappers to log button actions to conversation log
+  const handleChoose = useCallback((destination: string) => {
+    setHistory(prev => [...prev, { sender: "user", text: `Chọn đi: ${destination}` }]);
+    askForConfirmation({ type: "ride", destination });
+  }, [askForConfirmation]);
+
+  const handleCallClick = useCallback(() => {
+    setHistory(prev => [...prev, { sender: "user", text: "Yêu cầu gọi cho Linh" }]);
+    askForConfirmation({ type: "call" });
+  }, [askForConfirmation]);
+
+  const handleConfirmClick = useCallback(() => {
+    setHistory(prev => [...prev, { sender: "user", text: "ĐÚNG" }]);
+    confirmIntent();
+  }, [confirmIntent]);
+
+  const handleRejectClick = useCallback(() => {
+    setHistory(prev => [...prev, { sender: "user", text: "KHÔNG" }]);
+    rejectIntent();
+  }, [rejectIntent]);
 
   if (!ready) return <div className="min-h-screen bg-[#f7f8f5]" />;
 
@@ -279,12 +328,46 @@ export function RiderApp() {
             </span>
             EasyMove
           </Link>
-          <div className="flex items-center gap-2 rounded-full bg-[#e8f5ed] px-4 py-2.5 text-base font-bold text-[#11683f]">
-            <ShieldCheck className="h-5 w-5" />
-            Linh đang theo dõi
+          <div className="flex items-center gap-3">
+            <Link
+              href="/guardian"
+              target="_blank"
+              className="rounded-full border-2 border-[#11683f]/20 bg-white px-4 py-2 text-base font-bold text-[#11683f] transition hover:bg-[#e8f5ed] hover:border-[#11683f]"
+            >
+              Người thân giám sát
+            </Link>
+            <div className="flex items-center gap-2 rounded-full bg-[#e8f5ed] px-4 py-2.5 text-base font-bold text-[#11683f]">
+              <ShieldCheck className="h-5 w-5" />
+              Linh đang theo dõi
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Persistent Conversation Log */}
+      <div className="mx-auto w-full max-w-3xl px-5 pt-6">
+        <div className="bg-white rounded-3xl border-2 border-[#dfe7e2] p-5 shadow-[0_12px_36px_rgba(31,57,43,0.04)] flex flex-col gap-3 max-h-56 overflow-y-auto scroll-smooth">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#4d6156] mb-1 select-none border-b border-[#dfe7e2] pb-1.5">
+            Lịch sử đối thoại với trợ lý
+          </span>
+          {history.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex flex-col max-w-[85%] rounded-2xl px-4 py-3 text-lg font-bold leading-relaxed shadow-sm transition ${
+                msg.sender === "user"
+                  ? "self-end bg-[#11683f] text-white rounded-br-none"
+                  : "self-start bg-[#eef3f0] text-[#14261d] rounded-bl-none border border-[#dfe7e2]"
+              }`}
+            >
+              <span className="text-[10px] opacity-75 mb-0.5 font-bold uppercase tracking-wider">
+                {msg.sender === "user" ? "Bà Lan" : "Trợ lý EasyMove"}
+              </span>
+              <p>{msg.text}</p>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+      </div>
 
       {pendingIntent ? (
         <ConfirmationScreen
@@ -292,8 +375,8 @@ export function RiderApp() {
           voiceMode={mode}
           voiceMessage={message}
           onListen={startListening}
-          onConfirm={confirmIntent}
-          onReject={rejectIntent}
+          onConfirm={handleConfirmClick}
+          onReject={handleRejectClick}
         />
       ) : trip ? (
         <ActiveElderRide
@@ -310,10 +393,15 @@ export function RiderApp() {
                   : 0.05,
             })
           }
-          onCancel={() => askForConfirmation({ type: "cancel" })}
+          onCancel={() => {
+            setHistory(prev => [...prev, { sender: "user", text: "Yêu cầu hủy chuyến" }]);
+            askForConfirmation({ type: "cancel" });
+          }}
           onReset={() => {
             setTrip(null);
             resetVoice();
+            // Reset conversation history but keep welcome message
+            setHistory([{ sender: "bot", text: "Chào bà Lan, bạn cần tôi giúp gì?" }]);
           }}
         />
       ) : (
@@ -321,10 +409,8 @@ export function RiderApp() {
           voiceMode={mode}
           voiceMessage={notice || message}
           onListen={startListening}
-          onChoose={(destination) =>
-            askForConfirmation({ type: "ride", destination })
-          }
-          onCall={() => askForConfirmation({ type: "call" })}
+          onChoose={handleChoose}
+          onCall={handleCallClick}
         />
       )}
     </main>

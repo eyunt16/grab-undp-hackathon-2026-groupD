@@ -9,7 +9,7 @@ type AppHeaderProps = {
 
 export function AppHeader({
   backHref = "/",
-  backLabel = "Home",
+  backLabel = "Trang chủ",
   rightSlot,
 }: AppHeaderProps) {
   return (
