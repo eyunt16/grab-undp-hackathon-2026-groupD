@@ -264,7 +264,7 @@ export default function BudgetCalculator() {
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-[10px] text-slate-450 leading-normal">
-                  💡 <strong>Chứng minh dòng tiền:</strong> Dù người già (user trực tiếp) ngại thanh toán thẻ/công nghệ, GọiĐi giải quyết thông qua việc <strong>thu phí định kỳ từ con cháu (người bảo hộ)</strong> thông qua ví liên kết để đổi lấy sự an tâm.
+                  💡 <strong>Chứng minh dòng tiền:</strong> Dù người già (user trực tiếp) ngại thanh toán thẻ/công nghệ, EasyMove giải quyết thông qua việc <strong>thu phí định kỳ từ con cháu (người bảo hộ)</strong> thông qua ví liên kết để đổi lấy sự an tâm.
                 </div>
               </div>
             ) : (

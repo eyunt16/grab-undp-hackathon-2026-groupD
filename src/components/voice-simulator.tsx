@@ -222,7 +222,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
   const startVoiceBooking = () => {
     setErrorMsg("");
     setStep(1); // Greeting
-    speak("GọiĐi xin nghe! Ông bà muốn đi đâu hoặc muốn mua gì ạ?");
+    speak("EasyMove xin nghe! Ông bà muốn đi đâu hoặc muốn mua gì ạ?");
     
     setTimeout(() => {
       setStep(2); // Listening
@@ -265,7 +265,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
     if (channel) {
       channel.postMessage({
         type: "BOOKING_STARTED",
-        payload: { destination, price, provider: intent === "BOOK_RIDE" ? provider : "GọiĐi Shipper" }
+        payload: { destination, price, provider: intent === "BOOK_RIDE" ? provider : "EasyMove Shipper" }
       });
     }
 
@@ -285,7 +285,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
             driverName: "Nguyễn Văn Minh", 
             plate: "51A-123.45", 
             eta: intent === "BOOK_RIDE" ? 4 : 10, 
-            provider: intent === "BOOK_RIDE" ? provider : "GọiĐi Shipper" 
+            provider: intent === "BOOK_RIDE" ? provider : "EasyMove Shipper" 
           }
         });
       }
@@ -350,14 +350,14 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
   };
 
   return (
-    <div className="flex flex-col items-center p-6 w-full max-w-[360px] mx-auto bg-slate-900 text-white rounded-[40px] border-8 border-slate-950 shadow-2xl relative overflow-hidden min-h-[635px]" role="region" aria-label="Mô phỏng điện thoại người già">
+    <div className="flex flex-col items-center p-6 w-full max-w-[360px] mx-auto bg-[#0d1225] text-white rounded-[40px] border-[6px] border-[#161d35] shadow-2xl shadow-black/40 relative overflow-hidden min-h-[635px]" role="region" aria-label="Mô phỏng điện thoại người già">
       
       {/* Phone status bar */}
-      <div className="w-full flex justify-between px-6 py-2 text-xs text-slate-400 font-semibold select-none mb-3">
+      <div className="w-full flex justify-between px-6 py-2 text-xs text-slate-500 font-medium select-none mb-3">
         <span>9:41</span>
-        <div className="flex items-center gap-1.5 font-bold">
-          <div className="w-3.5 h-2 bg-slate-500 rounded-sm"></div>
-          <span>GọiĐi Voice AI</span>
+        <div className="flex items-center gap-1.5 font-semibold text-teal-400/70">
+          <div className="w-3.5 h-2 bg-teal-500/40 rounded-sm"></div>
+          <span>EasyMove</span>
         </div>
       </div>
 
@@ -368,21 +368,21 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
         {step === 0 && (
           <div className="flex-1 w-full flex flex-col justify-between items-center text-center">
             <div className="mt-1">
-              <h2 className="text-3xl font-extrabold tracking-tight text-white mb-1">GọiĐi</h2>
-              <p className="text-slate-450 text-[13px] leading-relaxed px-1">Ông bà chỉ cần nhấn nút đỏ rồi <strong>nói tự do</strong> những gì mình muốn để đặt xe/đặt đồ ăn.</p>
+              <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-teal-400 to-cyan-300 bg-clip-text text-transparent mb-1">EasyMove</h2>
+              <p className="text-slate-400 text-[13px] leading-relaxed px-1">Ông bà chỉ cần nhấn nút rồi <strong className="text-slate-200">nói tự do</strong> những gì mình muốn để đặt xe/đặt đồ ăn.</p>
             </div>
 
             {/* Micro button */}
             <div className="relative my-4 flex items-center justify-center">
-              <div className="absolute w-40 h-40 bg-emerald-500/10 rounded-full animate-ping pointer-events-none"></div>
-              <div className="absolute w-32 h-32 bg-emerald-500/20 rounded-full animate-pulse pointer-events-none"></div>
+              <div className="absolute w-40 h-40 bg-teal-500/10 rounded-full animate-ping pointer-events-none"></div>
+              <div className="absolute w-32 h-32 bg-teal-500/15 rounded-full animate-pulse pointer-events-none"></div>
               <button
                 onClick={startVoiceBooking}
                 aria-label="Bấm để gọi xe bằng giọng nói"
-                className="relative z-10 w-26 h-26 bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all text-white rounded-full flex flex-col items-center justify-center shadow-lg border-4 border-slate-900 group"
+                className="relative z-10 w-26 h-26 bg-teal-500 hover:bg-teal-400 active:scale-95 transition-all text-white rounded-full flex flex-col items-center justify-center shadow-lg shadow-teal-500/25 border-4 border-[#0d1225] group"
               >
                 <Mic className="w-10 h-10 group-hover:scale-110 transition-transform" />
-                <span className="text-[11px] font-bold mt-1 text-emerald-100">Bấm để nói</span>
+                <span className="text-[11px] font-bold mt-1 text-teal-100">Bấm để nói</span>
               </button>
             </div>
 
@@ -452,7 +452,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
               <Volume2 className="w-8 h-8 text-emerald-400 animate-bounce" />
             </div>
             <div>
-              <p className="text-emerald-400 font-semibold mb-1.5 text-xs">GọiĐi đang lắng nghe</p>
+              <p className="text-teal-400 font-semibold mb-1.5 text-xs">EasyMove đang lắng nghe</p>
               <h3 className="text-2xl font-bold px-2 leading-snug">"Chào ông bà, ông bà muốn đi đâu hoặc cần mua gì ạ?"</h3>
             </div>
           </div>
@@ -505,7 +505,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
             <div className="w-14 h-14 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
             <div>
               <p className="text-slate-400 text-xs mb-2">
-                {isLoadingGemini ? "Gemini AI đang phân tích ngữ nghĩa..." : "GọiĐi đang giải mã câu nói..."}
+                {isLoadingGemini ? "Gemini AI đang phân tích ngữ nghĩa..." : "EasyMove đang giải mã câu nói..."}
               </p>
               {transcribedText && (
                 <p className="text-emerald-400 font-bold italic text-lg">"{transcribedText}"</p>
@@ -536,7 +536,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
               <div className="flex justify-between items-center text-xs">
                 <span className="text-slate-450 font-semibold">{intent === "BOOK_RIDE" ? "Hãng xe đón" : "Dịch vụ"}</span>
                 <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 font-bold rounded-lg border border-emerald-500/20">
-                  {intent === "BOOK_RIDE" ? provider : "GọiĐi Ship"}
+                  {intent === "BOOK_RIDE" ? provider : "EasyMove Ship"}
                 </span>
               </div>
               {intent !== "BOOK_RIDE" && (
@@ -622,7 +622,7 @@ export default function VoiceSimulator({ channel }: VoiceSimulatorProps) {
               ) : (
                 <>
                   <div className="flex justify-between items-center p-3 bg-emerald-950/20 rounded-xl border border-emerald-800/30 text-emerald-400 text-xs font-semibold animate-pulse">
-                    <span>GọiĐi Shipper (1.2km)</span>
+                    <span>EasyMove Shipper (1.2km)</span>
                     <span>{price.toLocaleString("vi-VN")}đ - Nhận đơn!</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-slate-800/40 rounded-xl border border-slate-750 text-slate-400 text-xs">

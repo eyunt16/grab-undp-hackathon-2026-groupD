@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({
+  variable: "--font-sans",
+  subsets: ["latin", "vietnamese"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "GọiĐi — Trợ lý đặt xe bằng giọng nói cho người cao tuổi",
-  description: "Giải pháp di chuyển an toàn kết nối đa nhà xe và người thân giám hộ dành cho người mù công nghệ.",
+  title: "EasyMove — Voice-First Elderly Mobility Platform",
+  description: "Vietnamese Voice AI ride-hailing assistant connecting multi-provider transport and family guardians for tech-excluded elderly.",
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider>{children}</TooltipProvider>
@@ -34,3 +34,4 @@ export default function RootLayout({
     </html>
   );
 }
+

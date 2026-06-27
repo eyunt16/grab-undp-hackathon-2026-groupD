@@ -1,62 +1,63 @@
-# GọiĐi — Giải Pháp Di Chuyển Cho Người Cao Tuổi
+# EasyMove — Elderly Mobility Solution
 
-> Trợ lý giọng nói Tiếng Việt (Voice AI) kết nối đa nhà xe & người bảo hộ cho người mù công nghệ.
+> Vietnamese Voice AI assistant connecting multi-provider rides & family guardians for tech-excluded elderly.
 
 **Grab-UNDP Hackathon 2026 · Group D**
 
-## Vấn đề
+## Problem
 
-Việt Nam có khoảng **4 triệu người cao tuổi** sống cô đơn, đa số không sử dụng được smartphone hay ứng dụng gọi xe hiện đại. Họ phải phụ thuộc vào người thân hoặc bỏ lỡ nhu cầu di chuyển thiết yếu (khám bệnh, chợ, chùa).
+Vietnam has approximately **4 million elderly people** living alone, most of whom cannot use smartphones or modern ride-hailing apps. They depend on family members or miss essential mobility needs (hospital visits, markets, temples).
 
-## Giải pháp
+## Solution
 
-**GọiĐi** là một ứng dụng đặt xe/mua hộ bằng giọng nói Tiếng Việt, thiết kế tối giản cho người lớn tuổi:
+**EasyMove** is a voice-first ride-hailing and errand-running app designed for elderly users:
 
-- 🎤 **Giao diện 1 nút** — Chỉ cần bấm nút và nói tự do bằng Tiếng Việt
-- 🛡️ **Bảng theo dõi người thân** — Con cháu nhận SMS, theo dõi hành trình, và thanh toán hộ theo thời gian thực
-- 🚗 **Kết nối đa nhà xe** — Tổng hợp giá từ Grab, Be, Xanh SM để tìm xe nhanh & rẻ nhất
-- 🧠 **AI hiểu ngữ cảnh** — Gemini AI phân tích câu nói Tiếng Việt tự do (fallback local NLU khi offline)
-- 🚨 **Cảnh báo SOS** — Phát hiện xe đi chệch lộ trình, cảnh báo người thân
+- 🎤 **One-button interface** — Press the button and speak freely in Vietnamese
+- 🛡️ **Family guardian dashboard** — Children receive SMS, track trips, and pay on behalf in real-time
+- 🚗 **Multi-provider aggregation** — Compares fares across Grab, Be, Xanh SM to find the fastest, cheapest ride
+- 🧠 **Context-aware AI** — Gemini AI parses natural Vietnamese speech (with local NLU fallback when offline)
+- 🚨 **SOS alerts** — Route deviation detection alerts family guardians
 
 ## Demo
 
-Truy cập ứng dụng và mở **2 tab cùng lúc** để trải nghiệm song song:
-- Tab trái: Điện thoại người già (bấm mic hoặc chọn gợi ý)
-- Tab phải: Bảng theo dõi người thân (nhận thông báo real-time)
+Open the app and **use 2 tabs side by side** to experience:
+- Left: Elderly phone simulator (press mic or tap suggestions)
+- Right: Family guardian dashboard (receives real-time notifications)
 
-## Cài đặt & Chạy
+## Getting Started
 
 ```bash
-# Cài dependencies
+# Install dependencies
 npm install
 
-# Tạo file env (tùy chọn — chạy được không cần Gemini key)
+# Create env file (optional — runs without Gemini key)
 cp .env.example .env.local
 
-# Khởi chạy development server
+# Start development server
 npm run dev
 ```
 
-Mở [http://localhost:3000](http://localhost:3000) để xem kết quả.
+Open [http://localhost:3000](http://localhost:3000) to see the result.
 
-## Công nghệ
+## Tech Stack
 
 | Layer | Stack |
 |---|---|
 | Framework | Next.js 16 (App Router) |
 | UI | React 19 + TailwindCSS 4 + shadcn/ui |
+| Typography | Inter + JetBrains Mono |
 | Voice I/O | Web Speech API (STT + TTS vi-VN) |
 | NLU | Gemini 2.0 Flash (server route) + Local regex fallback |
 | Cross-tab sync | BroadcastChannel API |
 | Linting | Biome |
 
-## Cấu trúc dự án
+## Project Structure
 
 ```
 src/
 ├── app/
 │   ├── api/parse-voice/     # Gemini NLU server route
-│   ├── layout.tsx           # Root layout (vi-VN)
+│   ├── layout.tsx           # Root layout (vi-VN, Inter font)
 │   ├── page.tsx             # Main page with tab navigation
 │   └── globals.css          # Design tokens & themes
 ├── components/
@@ -68,12 +69,12 @@ src/
     └── utils.ts             # Tailwind merge utility
 ```
 
-## Biến môi trường
+## Environment Variables
 
-| Biến | Bắt buộc | Mô tả |
+| Variable | Required | Description |
 |---|---|---|
-| `GEMINI_API_KEY` | Không | API key cho Gemini AI NLU. Nếu không có, hệ thống dùng local regex parser. |
+| `GEMINI_API_KEY` | No | API key for Gemini AI NLU. Falls back to local regex parser if not set. |
 
-## Nhóm
+## Team
 
 **Group D** — Grab-UNDP Hackathon 2026

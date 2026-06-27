@@ -3,7 +3,7 @@
  * between the Voice Simulator (elderly phone) and Guardian Dashboard.
  */
 
-export type GoidiMessage =
+export type EasyMoveMessage =
   | {
       type: "BOOKING_STARTED";
       payload: {
@@ -42,9 +42,9 @@ export type GoidiMessage =
   | { type: "CANCEL_TRIP" };
 
 /** Type-safe helper to post a message to the BroadcastChannel */
-export function postGoidiMessage(
+export function postEasyMoveMessage(
   channel: BroadcastChannel | null,
-  message: GoidiMessage,
+  message: EasyMoveMessage,
 ) {
   if (channel) {
     channel.postMessage(message);

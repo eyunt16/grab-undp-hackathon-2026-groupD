@@ -19,7 +19,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
   const [tripDetails, setTripDetails] = useState({ destination: "", price: 0, provider: "" });
   const [driverDetails, setDriverDetails] = useState({ name: "", plate: "", eta: 0 });
   const [notifications, setNotifications] = useState<NotificationItem[]>([
-    { id: "1", text: "Hệ thống bảo vệ GọiĐi hoạt động bình thường.", time: "10 phút trước", type: "info" },
+    { id: "1", text: "Hệ thống bảo vệ EasyMove hoạt động bình thường.", time: "10 phút trước", type: "info" },
     { id: "2", text: "Bà Nguyễn Thị Lan đã lưu điểm đến mới: Bệnh viện Chợ Rẫy.", time: "1 giờ trước", type: "info" },
     { id: "3", text: "Chuyến đi hôm qua: Về nhà lúc 14:30 (Bằng xe GSM - Hoàn thành an toàn).", time: "Hôm qua", type: "success" }
   ]);
@@ -56,7 +56,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
         setOffRouteSim(false);
 
         // Add SMS simulation notification
-        const sms = `[GọiĐi SMS] Mẹ của bạn (${parentName}) vừa gọi xe ${payload.provider} đi ${payload.destination}. Giá ước tính: ${payload.price.toLocaleString("vi-VN")}đ. Hệ thống đang tìm tài xế.`;
+        const sms = `[EasyMove SMS] Mẹ của bạn (${parentName}) vừa gọi xe ${payload.provider} đi ${payload.destination}. Giá ước tính: ${payload.price.toLocaleString("vi-VN")}đ. Hệ thống đang tìm tài xế.`;
         setSMSContent(sms);
         setShowSMSAlert(true);
 
@@ -77,7 +77,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
           eta: payload.eta
         });
 
-        const sms = `[GọiĐi SMS] Xe ${payload.provider} biển số ${payload.plate} (Tài xế: ${payload.driverName}) đã nhận chuyến đi của mẹ bạn (${parentName}). Xe đến đón sau ${payload.eta} phút.`;
+        const sms = `[EasyMove SMS] Xe ${payload.provider} biển số ${payload.plate} (Tài xế: ${payload.driverName}) đã nhận chuyến đi của mẹ bạn (${parentName}). Xe đến đón sau ${payload.eta} phút.`;
         setSMSContent(sms);
         setShowSMSAlert(true);
 
@@ -93,7 +93,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
       } else if (type === "DRIVER_ARRIVED") {
         setTripState("arrived");
 
-        const sms = `[GọiĐi SMS] Tài xế ${payload.provider} đã đến điểm đón và đang chờ mẹ bạn (${parentName}) lên xe.`;
+        const sms = `[EasyMove SMS] Tài xế ${payload.provider} đã đến điểm đón và đang chờ mẹ bạn (${parentName}) lên xe.`;
         setSMSContent(sms);
         setShowSMSAlert(true);
 
@@ -198,7 +198,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
   };
 
   return (
-    <div className="flex flex-col w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white shadow-xl min-h-[620px]" role="region" aria-label="Bảng theo dõi người thân">
+    <div className="flex flex-col w-full bg-[#0d1225] border border-white/[0.06] rounded-3xl p-6 text-white shadow-xl shadow-black/20 min-h-[620px]" role="region" aria-label="Bảng theo dõi người thân">
       
       {/* Dashboard Header */}
       <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
@@ -435,8 +435,8 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
               <Send className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1">
-                Tin nhắn SMS tự động gửi tới người thân (Hệ thống Twilio)
+              <h5 className="text-[10px] font-bold uppercase tracking-wider text-teal-400 mb-1">
+                Tin nhắn SMS tự động gửi tới người thân (EasyMove)
               </h5>
               <p className="text-xs text-slate-200 leading-relaxed font-mono italic">
                 "{smsContent}"

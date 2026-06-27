@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const systemInstruction = `Bạn là bộ phận xử lý ngôn ngữ tự nhiên (NLU) cho ứng dụng "GọiĐi" dành cho người cao tuổi.
+    const systemInstruction = `Bạn là bộ phận xử lý ngôn ngữ tự nhiên (NLU) cho ứng dụng "EasyMove" dành cho người cao tuổi.
 Nhiệm vụ của bạn là phân tích câu nói Tiếng Việt của người già và trích xuất thông tin dưới dạng JSON.
 
 Hãy phân tích và trả về một đối tượng JSON duy nhất với cấu trúc sau:
