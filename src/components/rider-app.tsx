@@ -18,8 +18,11 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveTripMap } from "@/components/live-trip-map";
+import {
+  type AiVoiceIntent,
+  useAiVoiceCommand,
+} from "@/hooks/use-ai-voice-command";
 import { useTripSync } from "@/hooks/use-trip-sync";
-import { useVietnameseVoice } from "@/hooks/use-vietnamese-voice";
 import type { Trip, TripStatus } from "@/lib/trip";
 
 type PendingIntent =
@@ -33,6 +36,7 @@ const savedPlaces = [
     label: "Về nhà",
     destination: "Nhà · 24 Nguyễn Đình Chiểu",
     detail: "Địa chỉ nhà đã lưu",
+    prompt: "Toi muon ve nha",
     icon: Home,
     color: "bg-[#e9f5ee] text-[#11683f]",
   },
@@ -40,6 +44,7 @@ const savedPlaces = [
     label: "Đi bệnh viện",
     destination: "Bệnh viện Chợ Rẫy",
     detail: "Cổng chính đường Nguyễn Chí Thanh",
+    prompt: "Toi muon di benh vien",
     icon: Stethoscope,
     color: "bg-[#e9f1f8] text-[#315f7c]",
   },
@@ -64,14 +69,15 @@ const destinationLocations: Record<string, { lat: number; lng: number }> = {
   "Nhà Linh · 88 Võ Văn Tần": { lat: 10.7752, lng: 106.6891 },
 };
 
-function normalizeVietnamese(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/[.,?!]/g, "")
-    .trim();
+function toKnownDestination(destination: string | undefined) {
+  if (!destination) return undefined;
+  const voiceDestinationMap: Record<string, string> = {
+    "Nha - 24 Nguyen Dinh Chieu": "Nha - 24 Nguyen Dinh Chieu",
+    "Benh vien Cho Ray": "Bệnh viện Chợ Rẫy",
+    "Cho Ben Thanh": "Chợ Bến Thành",
+    "Nha Linh - 88 Vo Van Tan": "Nhà Linh · 88 Võ Văn Tần",
+  };
+  return voiceDestinationMap[destination] ?? destination;
 }
 
 export function RiderApp() {
@@ -94,60 +100,49 @@ export function RiderApp() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history]);
 
-  const handleVoiceCommand = useCallback((rawTranscript: string) => {
+  const handleVoiceIntent = useCallback((intent: AiVoiceIntent) => {
     voiceInitiatedRef.current = true;
-    const command = normalizeVietnamese(rawTranscript);
-    
-    // Add user voice command to history
-    setHistory(prev => [...prev, { sender: "user", text: rawTranscript }]);
+    setNotice("");
 
-    const isYes = /\b(dung|dong y|xac nhan|dat xe|co|phai|u|duoc|ok)\b/.test(command);
-    const isNo = /\b(khong|quay lai|thoi|huy|sai|nham)\b/.test(command);
-
-    if (isNo) {
-      rejectIntentRef.current();
-      return;
-    }
-    if (isYes) {
+    if (intent.type === "confirm") {
       confirmIntentRef.current();
       return;
     }
-    if (/goi.*(linh|con|nguoi than)/.test(command)) {
+    if (intent.type === "reject") {
+      rejectIntentRef.current();
+      return;
+    }
+    if (intent.type === "call") {
       setPendingIntent({ type: "call" });
       return;
     }
-    if (/\b(huy|huy chuyen)\b/.test(command)) {
+    if (intent.type === "cancel") {
       setPendingIntent({ type: "cancel" });
       return;
     }
-    if (/ve nha|di nha/.test(command)) {
-      setPendingIntent({
-        type: "ride",
-        destination: "Nhà · 24 Nguyễn Đình Chiểu",
-      });
-      return;
-    }
-    if (/benh vien|di kham|kham benh/.test(command)) {
-      setPendingIntent({ type: "ride", destination: "Bệnh viện Chợ Rẫy" });
-      return;
-    }
-    if (/cho|ben thanh/.test(command)) {
-      setPendingIntent({ type: "ride", destination: "Chợ Bến Thành" });
-      return;
-    }
-    if (/nha linh|nha con/.test(command)) {
-      setPendingIntent({
-        type: "ride",
-        destination: "Nhà Linh · 88 Võ Văn Tần",
-      });
+    if (intent.type === "ride") {
+      const destination = toKnownDestination(intent.destination);
+      if (destination) setPendingIntent({ type: "ride", destination });
       return;
     }
 
-    setNotice("Tôi chưa hiểu. Bạn có thể nói “về nhà” hoặc “đi bệnh viện”.");
+    setNotice("Toi chua hieu. Ban co the noi ve nha hoac di benh vien.");
   }, []);
 
-  const { mode, message, startListening, speak, resetVoice } =
-    useVietnameseVoice(handleVoiceCommand);
+  const {
+    mode,
+    message,
+    processTextCommand,
+    startListening,
+    speak,
+    resetVoice,
+  } = useAiVoiceCommand({
+    getContext: () => ({
+      pendingIntent,
+      tripStatus: trip?.status ?? null,
+    }),
+    onIntent: handleVoiceIntent,
+  });
 
   // Wrapper to speak and also log bot responses
   const speakAndLog = useCallback((text: string, listenAfter = false) => {
@@ -292,16 +287,6 @@ export function RiderApp() {
   }, [speakAndLog, trip]);
 
   // Click handler wrappers to log button actions to conversation log
-  const handleChoose = useCallback((destination: string) => {
-    setHistory(prev => [...prev, { sender: "user", text: `Chọn đi: ${destination}` }]);
-    askForConfirmation({ type: "ride", destination });
-  }, [askForConfirmation]);
-
-  const handleCallClick = useCallback(() => {
-    setHistory(prev => [...prev, { sender: "user", text: "Yêu cầu gọi cho Linh" }]);
-    askForConfirmation({ type: "call" });
-  }, [askForConfirmation]);
-
   const handleConfirmClick = useCallback(() => {
     setHistory(prev => [...prev, { sender: "user", text: "ĐÚNG" }]);
     confirmIntent();
@@ -409,8 +394,14 @@ export function RiderApp() {
           voiceMode={mode}
           voiceMessage={notice || message}
           onListen={startListening}
-          onChoose={handleChoose}
-          onCall={handleCallClick}
+          onChoose={(prompt) => {
+            setHistory(prev => [...prev, { sender: "user", text: prompt }]);
+            processTextCommand(prompt);
+          }}
+          onCall={() => {
+            setHistory(prev => [...prev, { sender: "user", text: "Tôi muốn gọi Linh" }]);
+            processTextCommand("Toi muon goi Linh");
+          }}
         />
       )}
     </main>
@@ -427,7 +418,7 @@ function ElderHome({
   voiceMode: string;
   voiceMessage: string;
   onListen: () => void;
-  onChoose: (destination: string) => void;
+  onChoose: (prompt: string) => void;
   onCall: () => void;
 }) {
   const listening = voiceMode === "listening";
@@ -447,11 +438,11 @@ function ElderHome({
         <button
           type="button"
           onClick={onListen}
-          className={`relative grid h-44 w-44 place-items-center rounded-full border-[10px] text-white shadow-[0_22px_55px_rgba(17,104,63,0.25)] transition active:scale-95 sm:h-52 sm:w-52 ${listening ? "border-[#b8efd0] bg-[#d7473f]" : "border-[#d8efe2] bg-[#11683f]"}`}
+          className={`relative grid h-44 w-44 place-items-center rounded-full border-10 text-white shadow-[0_22px_55px_rgba(17,104,63,0.25)] transition active:scale-95 sm:h-52 sm:w-52 ${listening ? "border-[#b8efd0] bg-[#d7473f]" : "border-[#d8efe2] bg-[#11683f]"}`}
           aria-label={listening ? "Đang nghe" : "Nhấn để nói"}
         >
           {listening && (
-            <span className="absolute inset-[-18px] animate-ping rounded-full border-4 border-[#d7473f]/30" />
+            <span className="absolute -inset-4.5 animate-ping rounded-full border-4 border-[#d7473f]/30" />
           )}
           <span className="relative flex flex-col items-center gap-2">
             {voiceMode === "unsupported" ? (
@@ -486,7 +477,7 @@ function ElderHome({
             <button
               key={place.label}
               type="button"
-              onClick={() => onChoose(place.destination)}
+              onClick={() => onChoose(place.prompt)}
               className="flex min-h-24 w-full items-center gap-5 rounded-3xl border-2 border-[#d8e2dc] bg-white p-5 text-left shadow-[0_8px_24px_rgba(31,57,43,0.06)] hover:border-[#11683f] active:scale-[0.99]"
             >
               <span
