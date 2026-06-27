@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { useEffect, useMemo, useRef } from "react";
 import type { GeoPoint, Trip } from "@/lib/trip";
 
@@ -52,6 +53,9 @@ export function LiveTripMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import("maplibre-gl").Map | null>(null);
   const vehicleMarkerRef = useRef<import("maplibre-gl").Marker | null>(null);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   const pickup = trip.pickupLocation ?? defaultPickup;
   const destination = trip.destinationLocation ?? defaultDestination;
   const vehicle = getVehicleLocation(trip, pickup, destination);
@@ -72,7 +76,9 @@ export function LiveTripMap({
 
       const map = new maplibregl.Map({
         container: containerRef.current,
-        style: "https://tiles.openfreemap.org/styles/bright",
+        style: isDark
+          ? "https://tiles.openfreemap.org/styles/dark"
+          : "https://tiles.openfreemap.org/styles/bright",
         center: [
           (pickup.lng + destination.lng) / 2,
           (pickup.lat + destination.lat) / 2,
@@ -92,7 +98,7 @@ export function LiveTripMap({
       );
 
       const pickupMarker = new maplibregl.Marker({
-        color: "#16764a",
+        color: isDark ? "#3378FF" : "#0047AB",
         scale: 1.1,
       })
         .setLngLat([pickup.lng, pickup.lat])
@@ -135,7 +141,7 @@ export function LiveTripMap({
           type: "line",
           source: "trip-route",
           paint: {
-            "line-color": "#ffffff",
+            "line-color": isDark ? "#1E1E1E" : "#ffffff",
             "line-width": 10,
             "line-opacity": 0.9,
           },
@@ -145,7 +151,7 @@ export function LiveTripMap({
           type: "line",
           source: "trip-route",
           paint: {
-            "line-color": "#16764a",
+            "line-color": isDark ? "#3378FF" : "#0047AB",
             "line-width": 5,
             "line-opacity": 0.95,
           },
@@ -194,6 +200,7 @@ export function LiveTripMap({
     pickup.lat,
     pickup.lng,
     routeCoordinates,
+    isDark,
   ]);
 
   useEffect(() => {
@@ -208,12 +215,12 @@ export function LiveTripMap({
 
   return (
     <section
-      className={`relative overflow-hidden bg-[#dbe5dd] ${compact ? "h-72 rounded-t-[1.35rem]" : "h-[390px] sm:h-[480px]"}`}
+      className={`relative overflow-hidden bg-muted ${compact ? "h-72 rounded-t-[1.35rem]" : "h-[390px] sm:h-[480px]"}`}
       aria-label="Bản đồ MapLibre hiển thị vị trí trực tiếp"
     >
       <div ref={containerRef} className="absolute inset-0" />
-      <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-sm font-black text-[#11683f] shadow-md">
-        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#2bb36b]" />
+      <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-card/95 border border-border px-3 py-2 text-sm font-black text-primary shadow-md">
+        <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500" />
         ĐANG CẬP NHẬT
       </div>
     </section>

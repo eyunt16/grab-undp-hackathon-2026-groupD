@@ -37,18 +37,18 @@ export function GuardianApp() {
   const { trip, ready, updateTrip } = useTripSync();
 
   return (
-    <main className="min-h-screen bg-[#f4f6f4] text-[#17231d]">
+    <main className="min-h-screen bg-background text-foreground transition-colors duration-200">
       <AppHeader
         rightSlot={
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="grid h-10 w-10 place-items-center rounded-full border border-[#dce3de] bg-white text-[#52635a] hover:border-[#157347]"
+              className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-muted-foreground hover:border-primary hover:text-primary transition-all duration-200"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
             </button>
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-[#21382d] text-sm font-black text-white">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-primary text-sm font-black text-primary-foreground">
               LT
             </div>
           </div>
@@ -58,26 +58,26 @@ export function GuardianApp() {
       <div className="mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 lg:py-10">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#157347]">
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-primary">
               Giám sát người thân
             </p>
             <h1 className="mt-2 text-4xl font-black tracking-[-0.045em]">
               Chào Linh
             </h1>
-            <p className="mt-2 text-[#6a7971]">
+            <p className="mt-2 text-muted-foreground">
               Dưới đây là thông tin cập nhật chuyến đi mới nhất của bà Mai Lan.
             </p>
           </div>
           <Link
             href="/ride"
-            className="flex h-11 items-center justify-center gap-2 rounded-full border border-[#cad7cf] bg-white px-5 text-sm font-bold text-[#315344] hover:border-[#157347]"
+            className="flex h-11 items-center justify-center gap-2 rounded-full border border-border bg-card px-5 text-sm font-bold text-foreground hover:border-primary hover:bg-muted transition-all duration-200"
           >
             Mở ứng dụng đặt xe <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
 
         {!ready ? (
-          <div className="h-72 animate-pulse rounded-[2rem] bg-white" />
+          <div className="h-72 animate-pulse rounded-[2rem] bg-card border border-border" />
         ) : trip ? (
           <ActiveGuardianTrip trip={trip} updateTrip={updateTrip} />
         ) : (
@@ -91,19 +91,20 @@ export function GuardianApp() {
 function EmptyGuardian() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <section className="flex min-h-[440px] flex-col items-center justify-center rounded-[2rem] border border-[#e0e6e2] bg-white p-8 text-center shadow-[0_16px_48px_rgba(29,48,38,0.05)]">
-        <div className="grid h-20 w-20 place-items-center rounded-full bg-[#eaf5ef] text-[#157347]">
+      <section className="flex min-h-[440px] flex-col items-center justify-center rounded-[2rem] border border-border bg-card p-8 text-center shadow-[0_16px_48px_rgba(0,0,0,0.02)]">
+        <div className="grid h-20 w-20 place-items-center rounded-full bg-primary/10 text-primary">
           <HeartHandshake className="h-9 w-9" />
         </div>
         <h2 className="mt-6 text-3xl font-black tracking-tight">
           Không có chuyến đi hoạt động
         </h2>
-        <p className="mt-3 max-w-md leading-7 text-[#6f7e76]">
-          Khi bà Mai Lan đặt chuyến đi, thông tin tài xế và lộ trình trực tiếp sẽ tự động xuất hiện ở đây.
+        <p className="mt-3 max-w-md leading-7 text-muted-foreground">
+          Khi bà Mai Lan đặt chuyến đi, thông tin tài xế và lộ trình trực tiếp
+          sẽ tự động xuất hiện ở đây.
         </p>
         <Link
           href="/ride"
-          className="mt-7 flex h-12 items-center gap-2 rounded-xl bg-[#157347] px-6 font-bold text-white hover:bg-[#11623c]"
+          className="mt-7 flex h-12 items-center gap-2 rounded-xl bg-primary px-6 font-bold text-primary-foreground hover:opacity-90 transition-all"
         >
           Đặt xe hộ bà Mai Lan <ChevronRight className="h-4 w-4" />
         </Link>
@@ -125,24 +126,26 @@ function ActiveGuardianTrip({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_380px]">
-      <section className="overflow-hidden rounded-[2rem] border border-[#dde4df] bg-white shadow-[0_18px_55px_rgba(29,48,38,0.07)]">
-        <div className="flex flex-col justify-between gap-4 border-b border-[#e7ebe8] p-6 sm:flex-row sm:items-center sm:p-7">
+      <section className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-[0_18px_55px_rgba(0,0,0,0.03)]">
+        <div className="flex flex-col justify-between gap-4 border-b border-border p-6 sm:flex-row sm:items-center sm:p-7">
           <div className="flex items-center gap-4">
-            <div className="grid h-14 w-14 place-items-center rounded-full bg-[#f4a340] text-lg font-black text-[#20372c]">
+            <div className="grid h-14 w-14 place-items-center rounded-full bg-amber-500 text-lg font-black text-white">
               ML
             </div>
             <div>
-              <p className="text-sm text-[#75827b]">Chuyến đi của bà Mai Lan</p>
+              <p className="text-sm text-muted-foreground">
+                Chuyến đi của bà Mai Lan
+              </p>
               <h2 className="mt-0.5 text-2xl font-black tracking-tight">
                 {statusCopy[trip.status]}
               </h2>
             </div>
           </div>
           <div
-            className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${isActive ? "bg-[#e9f6ee] text-[#157347]" : "bg-[#eef1ef] text-[#69766f]"}`}
+            className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${isActive ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
           >
             <span
-              className={`h-2 w-2 rounded-full ${isActive ? "animate-pulse bg-[#27a963]" : "bg-[#89958e]"}`}
+              className={`h-2 w-2 rounded-full ${isActive ? "animate-pulse bg-emerald-500" : "bg-neutral-400 dark:bg-neutral-500"}`}
             />
             {isActive ? "Trực tiếp" : "Đã cập nhật"}
           </div>
@@ -150,15 +153,15 @@ function ActiveGuardianTrip({
 
         <div className="relative">
           <LiveTripMap trip={trip} />
-          <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-[350px]">
+          <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-card/95 border border-border p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-[350px]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-[#748179]">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Điểm đến
               </p>
               <p className="mt-1 font-bold">{trip.destination}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-[#748179]">Thời gian đón</p>
+              <p className="text-xs text-muted-foreground">Thời gian đón</p>
               <p className="font-black">{trip.eta} phút</p>
             </div>
           </div>
@@ -168,36 +171,38 @@ function ActiveGuardianTrip({
       <div className="space-y-6">
         <PersonCard />
 
-        <section className="rounded-[1.75rem] border border-[#dde4df] bg-white p-6 shadow-[0_14px_42px_rgba(29,48,38,0.05)]">
+        <section className="rounded-[1.75rem] border border-border bg-card p-6 shadow-[0_14px_42px_rgba(0,0,0,0.02)]">
           <h3 className="font-black">Chi tiết chuyến đi</h3>
           <div className="mt-5 space-y-4">
             {trip.driverName ? (
               <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-[#21382d] font-black text-white">
+                <div className="grid h-11 w-11 place-items-center rounded-full bg-primary font-black text-primary-foreground">
                   MQ
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-bold">{trip.driverName}</p>
                     <span className="flex items-center text-xs font-bold">
-                      <Star className="mr-1 h-3 w-3 fill-[#e99b3d] text-[#e99b3d]" />
+                      <Star className="mr-1 h-3 w-3 fill-amber-400 text-amber-400" />
                       4.9
                     </span>
                   </div>
-                  <p className="truncate text-sm text-[#748179]">
+                  <p className="truncate text-sm text-muted-foreground">
                     {trip.vehicle} · {trip.plate}
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 text-[#6f7e76]">
-                <span className="h-11 w-11 animate-pulse rounded-full bg-[#e6ece8]" />
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <span className="h-11 w-11 animate-pulse rounded-full bg-muted" />
                 <span className="font-semibold">Đang tìm tài xế gần đây…</span>
               </div>
             )}
-            <div className="flex items-center gap-3 border-t border-[#e9edea] pt-4">
-              <Clock3 className="h-5 w-5 text-[#157347]" />
-              <span className="flex-1 text-sm text-[#6f7e76]">Giá cước chuyến xe</span>
+            <div className="flex items-center gap-3 border-t border-border pt-4">
+              <Clock3 className="h-5 w-5 text-primary" />
+              <span className="flex-1 text-sm text-muted-foreground">
+                Giá cước chuyến xe
+              </span>
               <strong className="text-sm">
                 ₫{trip.price.toLocaleString("vi-VN")}
               </strong>
@@ -207,14 +212,14 @@ function ActiveGuardianTrip({
             <div className="mt-5 grid grid-cols-2 gap-3">
               <a
                 href="tel:+84901234567"
-                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#edf4f0] text-sm font-bold text-[#264638]"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary/10 text-sm font-bold text-primary hover:bg-primary/20 transition-all"
               >
                 <Phone className="h-4 w-4" />
                 Gọi tài xế
               </a>
               <a
                 href="sms:+84901234567"
-                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#edf4f0] text-sm font-bold text-[#264638]"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary/10 text-sm font-bold text-primary hover:bg-primary/20 transition-all"
               >
                 <MessageCircle className="h-4 w-4" />
                 Nhắn tin
@@ -223,7 +228,7 @@ function ActiveGuardianTrip({
           )}
         </section>
 
-        <section className="rounded-[1.75rem] border border-[#dde4df] bg-white p-6 shadow-[0_14px_42px_rgba(29,48,38,0.05)]">
+        <section className="rounded-[1.75rem] border border-border bg-card p-6 shadow-[0_14px_42px_rgba(0,0,0,0.02)]">
           <h3 className="font-black">Tiến trình chuyến đi</h3>
           <div className="mt-5 space-y-0">
             {timeline.map((item, index) => {
@@ -235,16 +240,16 @@ function ActiveGuardianTrip({
                 >
                   {index < timeline.length - 1 && (
                     <span
-                      className={`absolute left-[11px] top-6 h-full w-0.5 ${complete ? "bg-[#7dcca0]" : "bg-[#e0e6e2]"}`}
+                      className={`absolute left-[11px] top-6 h-full w-0.5 ${complete ? "bg-emerald-500" : "bg-border"}`}
                     />
                   )}
                   <span
-                    className={`relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full ${complete ? "bg-[#157347] text-white" : "border-2 border-[#dce3de] bg-white"}`}
+                    className={`relative z-10 grid h-6 w-6 shrink-0 place-items-center rounded-full ${complete ? "bg-primary text-primary-foreground" : "border-2 border-border bg-card text-muted-foreground"}`}
                   >
                     {complete && <Check className="h-3.5 w-3.5" />}
                   </span>
                   <span
-                    className={`text-sm font-semibold ${complete ? "text-[#274739]" : "text-[#9aa59f]"}`}
+                    className={`text-sm font-semibold ${complete ? "text-foreground" : "text-muted-foreground"}`}
                   >
                     {item.label}
                   </span>
@@ -256,7 +261,7 @@ function ActiveGuardianTrip({
             <button
               type="button"
               onClick={() => updateTrip({ status: "cancelled" })}
-              className="mt-6 h-11 w-full rounded-xl border border-[#eccdca] text-sm font-bold text-[#ad4b43] hover:bg-[#fff5f4]"
+              className="mt-6 h-11 w-full rounded-xl border border-error/20 bg-card text-sm font-bold text-error hover:bg-error/10 hover:border-error transition-all cursor-pointer"
             >
               Hủy chuyến xe này
             </button>
@@ -269,22 +274,26 @@ function ActiveGuardianTrip({
 
 function PersonCard() {
   return (
-    <section className="rounded-[1.75rem] bg-[#21382d] p-6 text-white shadow-[0_18px_46px_rgba(27,55,41,0.15)]">
+    <section className="rounded-[1.75rem] bg-primary p-6 text-primary-foreground shadow-[0_18px_46px_rgba(0,71,171,0.15)]">
       <div className="flex items-start justify-between">
-        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/10">
-          <UserRound className="h-6 w-6 text-[#83e3ad]" />
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/15">
+          <UserRound className="h-6 w-6 text-sky-200 dark:text-sky-300" />
         </div>
-        <span className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-[#bce8cd]">
-          <span className="h-2 w-2 rounded-full bg-[#70d79c]" />
+        <span className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold text-white">
+          <span className="h-2 w-2 rounded-full bg-emerald-400" />
           Đã kết nối
         </span>
       </div>
-      <p className="mt-6 text-sm text-white/55">Thành viên đang bảo hộ</p>
+      <p className="mt-6 text-sm text-primary-foreground/80">
+        Thành viên đang bảo hộ
+      </p>
       <h2 className="mt-1 text-2xl font-black">Bà Mai Lan</h2>
-      <p className="mt-2 text-sm text-white/65">Mẹ · +84 90 123 4567</p>
+      <p className="mt-2 text-sm text-primary-foreground/90">
+        Mẹ · +84 90 123 4567
+      </p>
       <a
         href="tel:+84901234567"
-        className="mt-6 flex h-11 items-center justify-center gap-2 rounded-xl bg-white font-bold text-[#21382d] hover:bg-[#eef5f0]"
+        className="mt-6 flex h-11 items-center justify-center gap-2 rounded-xl bg-primary-foreground font-bold text-primary hover:opacity-95 transition-all"
       >
         <Phone className="h-4 w-4" />
         Gọi cho bà Mai Lan

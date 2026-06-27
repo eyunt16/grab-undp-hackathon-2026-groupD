@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveTripMap } from "@/components/live-trip-map";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   type AiVoiceIntent,
   type RiderVoiceStage,
@@ -57,7 +58,8 @@ const savedPlaces = [
     detail: "Địa chỉ nhà đã lưu",
     prompt: "Toi muon ve nha",
     icon: Home,
-    color: "bg-[#e9f5ee] text-[#11683f]",
+    color:
+      "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400",
   },
   {
     label: "Đi bệnh viện",
@@ -65,7 +67,7 @@ const savedPlaces = [
     detail: "Cổng chính đường Nguyễn Chí Thanh",
     prompt: "Toi muon di benh vien",
     icon: Stethoscope,
-    color: "bg-[#e9f1f8] text-[#315f7c]",
+    color: "bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-400",
   },
   {
     label: "Đi học",
@@ -73,7 +75,8 @@ const savedPlaces = [
     detail: "Khu đô thị Đại học Quốc gia",
     prompt: "Toi muon di hoc",
     icon: GraduationCap,
-    color: "bg-[#eef2ff] text-[#3949a3]",
+    color:
+      "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400",
   },
 ];
 
@@ -361,31 +364,32 @@ export function RiderApp() {
     rejectIntent();
   }, [rejectIntent]);
 
-  if (!ready) return <div className="min-h-screen bg-[#f7f8f5]" />;
+  if (!ready) return <div className="min-h-screen bg-background" />;
 
   return (
-    <main className="min-h-screen bg-[#f7f8f5] text-[#14261d]">
-      <header className="border-b-2 border-[#dfe7e2] bg-white">
+    <main className="min-h-screen bg-background text-foreground transition-colors duration-200">
+      <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
           <Link
             href="/"
-            className="flex min-h-12 items-center gap-3 text-xl font-black"
+            className="flex min-h-12 items-center gap-3 text-xl font-black text-foreground"
             aria-label="Về trang chính"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#11683f] text-white">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground">
               <MapPin className="h-6 w-6" />
             </span>
             AloXe
           </Link>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/guardian"
               target="_blank"
-              className="rounded-full border-2 border-[#11683f]/20 bg-white px-4 py-2 text-base font-bold text-[#11683f] transition hover:bg-[#e8f5ed] hover:border-[#11683f]"
+              className="rounded-full border-2 border-primary/20 bg-card px-4 py-2 text-base font-bold text-primary transition hover:bg-primary/10 hover:border-primary"
             >
               Người thân giám sát
             </Link>
-            <div className="flex items-center gap-2 rounded-full bg-[#e8f5ed] px-4 py-2.5 text-base font-bold text-[#11683f]">
+            <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2.5 text-base font-bold text-primary">
               <ShieldCheck className="h-5 w-5" />
               Linh đang theo dõi
             </div>
@@ -395,8 +399,8 @@ export function RiderApp() {
 
       {/* Persistent Conversation Log */}
       <div className="mx-auto w-full max-w-3xl px-5 pt-6">
-        <div className="bg-white rounded-3xl border-2 border-[#dfe7e2] p-5 shadow-[0_12px_36px_rgba(31,57,43,0.04)] flex flex-col gap-3 max-h-56 overflow-y-auto scroll-smooth">
-          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#4d6156] mb-1 select-none border-b border-[#dfe7e2] pb-1.5">
+        <div className="bg-card rounded-3xl border border-border p-5 shadow-[0_12px_36px_rgba(0,0,0,0.03)] flex flex-col gap-3 max-h-56 overflow-y-auto scroll-smooth">
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground mb-1 select-none border-b border-border pb-1.5">
             Lịch sử đối thoại với trợ lý
           </span>
           {history.map((msg) => (
@@ -404,8 +408,8 @@ export function RiderApp() {
               key={msg.id}
               className={`flex flex-col max-w-[85%] rounded-2xl px-4 py-3 text-lg font-bold leading-relaxed shadow-sm transition ${
                 msg.sender === "user"
-                  ? "self-end bg-[#11683f] text-white rounded-br-none"
-                  : "self-start bg-[#eef3f0] text-[#14261d] rounded-bl-none border border-[#dfe7e2]"
+                  ? "self-end bg-primary text-primary-foreground rounded-br-none"
+                  : "self-start bg-muted text-foreground rounded-bl-none border border-border"
               }`}
             >
               <span className="text-[10px] opacity-75 mb-0.5 font-bold uppercase tracking-wider">
@@ -491,11 +495,11 @@ function RiderHome({
   return (
     <section className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
       <div className="text-center">
-        <p className="text-xl font-bold text-[#4d6156]">Chào bà Lan</p>
+        <p className="text-xl font-bold text-muted-foreground">Chào bà Lan</p>
         <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
           Bạn cần tôi giúp gì?
         </h1>
-        <p className="mt-4 text-xl leading-8 text-[#52655a]">
+        <p className="mt-4 text-xl leading-8 text-muted-foreground">
           Nhấn nút micro rồi nói, ví dụ: “Đi bệnh viện”
         </p>
       </div>
@@ -504,11 +508,11 @@ function RiderHome({
         <button
           type="button"
           onClick={onListen}
-          className={`relative grid h-44 w-44 place-items-center rounded-full border-10 text-white shadow-[0_22px_55px_rgba(17,104,63,0.25)] transition active:scale-95 sm:h-52 sm:w-52 ${listening ? "border-[#b8efd0] bg-[#d7473f]" : "border-[#d8efe2] bg-[#11683f]"}`}
+          className={`relative grid h-44 w-44 place-items-center rounded-full border-10 text-white shadow-[0_22px_55px_rgba(0,71,171,0.25)] transition active:scale-95 sm:h-52 sm:w-52 ${listening ? "border-red-200 dark:border-red-950 bg-red-600 dark:bg-red-700" : "border-primary/30 bg-primary"}`}
           aria-label={listening ? "Đang nghe" : "Nhấn để nói"}
         >
           {listening && (
-            <span className="absolute -inset-4.5 animate-ping rounded-full border-4 border-[#d7473f]/30" />
+            <span className="absolute -inset-4.5 animate-ping rounded-full border-4 border-red-600/30 dark:border-red-500/30" />
           )}
           <span className="relative flex flex-col items-center gap-2">
             {voiceMode === "unsupported" ? (
@@ -522,18 +526,18 @@ function RiderHome({
           </span>
         </button>
         <output
-          className="mt-6 flex min-h-14 items-center gap-3 rounded-2xl bg-white px-5 py-3 text-center text-lg font-bold text-[#31483c] shadow-sm"
+          className="mt-6 flex min-h-14 items-center gap-3 rounded-2xl bg-card border border-border px-5 py-3 text-center text-lg font-bold text-foreground shadow-sm"
           aria-live="polite"
         >
-          <Volume2 className="h-6 w-6 shrink-0 text-[#11683f]" />
+          <Volume2 className="h-6 w-6 shrink-0 text-primary" />
           {voiceMessage}
         </output>
       </div>
 
-      <div className="my-8 flex items-center gap-4 text-base font-bold text-[#66786e]">
-        <span className="h-0.5 flex-1 bg-[#dce4df]" />
+      <div className="my-8 flex items-center gap-4 text-base font-bold text-muted-foreground">
+        <span className="h-0.5 flex-1 bg-border" />
         HOẶC CHỌN NÚT
-        <span className="h-0.5 flex-1 bg-[#dce4df]" />
+        <span className="h-0.5 flex-1 bg-border" />
       </div>
 
       <div className="space-y-4">
@@ -544,7 +548,7 @@ function RiderHome({
               key={place.label}
               type="button"
               onClick={() => onChoose(place.prompt)}
-              className="flex min-h-24 w-full items-center gap-5 rounded-3xl border-2 border-[#d8e2dc] bg-white p-5 text-left shadow-[0_8px_24px_rgba(31,57,43,0.06)] hover:border-[#11683f] active:scale-[0.99]"
+              className="flex min-h-24 w-full items-center gap-5 rounded-3xl border-2 border-border bg-card p-5 text-left shadow-[0_8px_24px_rgba(0,0,0,0.03)] hover:border-primary active:scale-[0.99] transition-all"
             >
               <span
                 className={`grid h-16 w-16 shrink-0 place-items-center rounded-2xl ${place.color}`}
@@ -553,11 +557,13 @@ function RiderHome({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-2xl font-black">{place.label}</span>
-                <span className="mt-1 block text-lg text-[#5d7065]">
+                <span className="mt-1 block text-lg text-muted-foreground">
                   {place.detail}
                 </span>
               </span>
-              <span className="text-3xl font-black text-[#839188]">›</span>
+              <span className="text-3xl font-black text-muted-foreground">
+                ›
+              </span>
             </button>
           );
         })}
@@ -584,8 +590,8 @@ function ConfirmationScreen({
   const isRide = intent.type === "ride";
   return (
     <section className="mx-auto flex min-h-[calc(100vh-82px)] w-full max-w-3xl flex-col justify-center px-5 py-10 sm:px-8">
-      <div className="rounded-[2.5rem] border-2 border-[#dbe5df] bg-white p-6 text-center shadow-[0_24px_70px_rgba(29,55,41,0.1)] sm:p-10">
-        <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[#e9f5ee] text-[#11683f]">
+      <div className="rounded-[2.5rem] border-2 border-border bg-card p-6 text-center shadow-[0_24px_70px_rgba(0,0,0,0.05)] sm:p-10">
+        <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-primary/10 text-primary">
           {isRide ? (
             <MapPin className="h-10 w-10" />
           ) : intent.type === "call" ? (
@@ -594,13 +600,15 @@ function ConfirmationScreen({
             <X className="h-10 w-10" />
           )}
         </div>
-        <p className="mt-6 text-xl font-bold text-[#54685d]">Xin bà xác nhận</p>
+        <p className="mt-6 text-xl font-bold text-muted-foreground">
+          Xin bà xác nhận
+        </p>
         <h1 className="mt-3 text-4xl font-black leading-tight tracking-[-0.04em] sm:text-5xl">
           {isRide ? (
             <>
               Đặt xe đi
               <br />
-              <span className="text-[#11683f]">{intent.destination}</span>?
+              <span className="text-primary">{intent.destination}</span>?
             </>
           ) : intent.type === "call" ? (
             "Gọi cho Linh?"
@@ -609,10 +617,10 @@ function ConfirmationScreen({
           )}
         </h1>
         {isRide && (
-          <div className="mx-auto mt-7 grid max-w-lg grid-cols-2 gap-3 rounded-2xl bg-[#f1f5f2] p-4 text-lg">
-            <span className="text-[#5c6d63]">Xe đến sau</span>
+          <div className="mx-auto mt-7 grid max-w-lg grid-cols-2 gap-3 rounded-2xl bg-muted border border-border p-4 text-lg">
+            <span className="text-muted-foreground">Xe đến sau</span>
             <strong>Khoảng 4 phút</strong>
-            <span className="text-[#5c6d63]">Giá dự kiến</span>
+            <span className="text-muted-foreground">Giá dự kiến</span>
             <strong>
               {intent.destination.includes("Bệnh viện") ? "68.000đ" : "52.000đ"}
             </strong>
@@ -623,7 +631,7 @@ function ConfirmationScreen({
           <button
             type="button"
             onClick={onConfirm}
-            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-[#11683f] px-5 text-2xl font-black text-white shadow-[0_12px_30px_rgba(17,104,63,0.22)] hover:bg-[#0d5935] active:scale-[0.98]"
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-success px-5 text-2xl font-black text-success-foreground shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Check className="h-8 w-8" />
             ĐÚNG
@@ -631,7 +639,7 @@ function ConfirmationScreen({
           <button
             type="button"
             onClick={onReject}
-            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border-2 border-[#cfdad3] bg-white px-5 text-2xl font-black text-[#31483c] hover:border-[#8da396] active:scale-[0.98]"
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-error px-5 text-2xl font-black text-error-foreground shadow-lg hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer"
           >
             <X className="h-8 w-8" />
             KHÔNG
@@ -641,14 +649,14 @@ function ConfirmationScreen({
         <button
           type="button"
           onClick={onListen}
-          className={`mt-6 inline-flex min-h-14 items-center gap-3 rounded-full px-5 text-lg font-bold ${voiceMode === "listening" ? "bg-[#fde9e7] text-[#b8342e]" : "bg-[#eaf4ee] text-[#11683f]"}`}
+          className={`mt-6 inline-flex min-h-14 items-center gap-3 rounded-full px-5 text-lg font-bold ${voiceMode === "listening" ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" : "bg-primary/10 text-primary"}`}
         >
           <Mic className="h-6 w-6" />
           {voiceMode === "listening"
             ? "Tôi đang nghe…"
             : "Hoặc nói “đúng” / “không”"}
         </button>
-        <p className="mt-3 text-base text-[#687a70]" aria-live="polite">
+        <p className="mt-3 text-base text-muted-foreground" aria-live="polite">
           {voiceMessage}
         </p>
       </div>
@@ -715,16 +723,18 @@ function ActiveElderRide({
   return (
     <section className="mx-auto w-full max-w-4xl px-5 py-7 sm:px-8 sm:py-10">
       <div
-        className={`rounded-[2.2rem] p-6 text-center text-white shadow-[0_22px_55px_rgba(20,54,37,0.18)] sm:p-9 ${trip.status === "cancelled" ? "bg-[#5c6660]" : "bg-[#183d2c]"}`}
+        className={`rounded-[2.2rem] p-6 text-center text-white shadow-[0_22px_55px_rgba(0,0,0,0.05)] sm:p-9 ${trip.status === "cancelled" ? "bg-neutral-600 dark:bg-neutral-800" : "bg-primary"}`}
       >
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white/12">
           {trip.status === "completed" ? (
-            <Check className="h-9 w-9 text-[#8ce0b0]" />
+            <Check className="h-9 w-9 text-emerald-300" />
           ) : (
-            <Navigation className="h-8 w-8 text-[#8ce0b0]" />
+            <Navigation className="h-8 w-8 text-sky-300" />
           )}
         </div>
-        <p className="mt-5 text-lg font-black tracking-[0.12em] text-[#9fe2bb]">
+        <p
+          className={`mt-5 text-lg font-black tracking-[0.12em] ${trip.status === "cancelled" ? "text-neutral-300" : "text-sky-200 dark:text-sky-300"}`}
+        >
           {status.eyebrow}
         </p>
         <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] sm:text-5xl">
@@ -736,32 +746,34 @@ function ActiveElderRide({
       </div>
 
       {!finished && (
-        <div className="mt-5 overflow-hidden rounded-3xl border-2 border-[#d7e2dc] bg-white shadow-[0_10px_32px_rgba(29,55,41,0.07)]">
+        <div className="mt-5 overflow-hidden rounded-3xl border border-border bg-card shadow-[0_10px_32px_rgba(0,0,0,0.03)]">
           <LiveTripMap trip={trip} compact />
           <div className="flex items-center justify-between gap-4 p-4 text-lg">
-            <span className="font-bold text-[#52665b]">Đang đến</span>
+            <span className="font-bold text-muted-foreground">Đang đến</span>
             <strong className="text-right">{trip.destination}</strong>
           </div>
         </div>
       )}
 
       {!finished && trip.driverName && (
-        <div className="mt-5 rounded-3xl border-2 border-[#dce5df] bg-white p-5 shadow-[0_10px_32px_rgba(29,55,41,0.07)] sm:p-6">
+        <div className="mt-5 rounded-3xl border border-border bg-card p-5 shadow-[0_10px_32px_rgba(0,0,0,0.03)] sm:p-6">
           <div className="flex items-center gap-5">
-            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-[#e7f2eb] text-2xl font-black text-[#11683f]">
+            <div className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-primary/10 text-2xl font-black text-primary">
               MQ
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-lg text-[#5b6c62]">Tài xế của bà</p>
+              <p className="text-lg text-muted-foreground">Tài xế của bà</p>
               <h2 className="text-3xl font-black">{trip.driverName}</h2>
-              <p className="mt-1 text-xl font-bold text-[#40574b]">
+              <p className="mt-1 text-xl font-bold text-muted-foreground">
                 {trip.vehicle}
               </p>
             </div>
           </div>
-          <div className="mt-5 rounded-2xl bg-[#fff4df] p-4 text-center">
-            <p className="text-base font-bold text-[#6c5b3d]">BIỂN SỐ XE</p>
-            <p className="mt-1 text-4xl font-black tracking-[0.08em] text-[#322a1e]">
+          <div className="mt-5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/50 p-4 text-center">
+            <p className="text-base font-bold text-amber-800 dark:text-amber-300">
+              BIỂN SỐ XE
+            </p>
+            <p className="mt-1 text-4xl font-black tracking-[0.08em] text-amber-950 dark:text-amber-100">
               {trip.plate}
             </p>
           </div>
@@ -772,14 +784,14 @@ function ActiveElderRide({
         <div className="mt-5 grid grid-cols-2 gap-4">
           <a
             href="tel:+84901234567"
-            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border-2 border-[#d9e3dd] bg-white text-xl font-black text-[#234436]"
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border border-border bg-card text-xl font-black text-foreground hover:bg-muted transition-all"
           >
             <Phone className="h-7 w-7" />
             Gọi tài xế
           </a>
           <a
             href="tel:+84909876543"
-            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border-2 border-[#d9e3dd] bg-white text-xl font-black text-[#234436]"
+            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border border-border bg-card text-xl font-black text-foreground hover:bg-muted transition-all"
           >
             <HeartHandshake className="h-7 w-7" />
             Gọi Linh
@@ -791,7 +803,7 @@ function ActiveElderRide({
         <button
           type="button"
           onClick={() => onAdvance(next)}
-          className="mt-5 min-h-20 w-full rounded-2xl bg-[#11683f] px-5 text-2xl font-black text-white shadow-[0_12px_30px_rgba(17,104,63,0.18)]"
+          className="mt-5 min-h-20 w-full rounded-2xl bg-primary px-5 text-2xl font-black text-primary-foreground shadow-[0_12px_30px_rgba(0,71,171,0.18)] hover:opacity-90 transition-all"
         >
           {nextAction[trip.status]}
         </button>
@@ -802,14 +814,14 @@ function ActiveElderRide({
           <button
             type="button"
             onClick={onListen}
-            className={`flex min-h-16 items-center justify-center gap-3 rounded-2xl px-4 text-lg font-black ${voiceMode === "listening" ? "bg-[#fde8e6] text-[#b6352f]" : "bg-[#e7f3ec] text-[#11683f]"}`}
+            className={`flex min-h-16 items-center justify-center gap-3 rounded-2xl px-4 text-lg font-black ${voiceMode === "listening" ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400" : "bg-primary/10 text-primary"}`}
           >
             <Mic className="h-7 w-7" />
             {voiceMode === "listening" ? "Đang nghe…" : "Nói yêu cầu"}
           </button>
           <a
             href="tel:112"
-            className="flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#cf332e] px-5 text-xl font-black text-white"
+            className="flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-red-600 px-5 text-xl font-black text-white hover:bg-red-700 transition-all"
           >
             <Siren className="h-7 w-7" />
             SOS
@@ -818,7 +830,7 @@ function ActiveElderRide({
       )}
       {!finished && (
         <p
-          className="mt-3 text-center text-base text-[#63766b]"
+          className="mt-3 text-center text-base text-muted-foreground"
           aria-live="polite"
         >
           {voiceMessage}
@@ -828,7 +840,7 @@ function ActiveElderRide({
         <button
           type="button"
           onClick={onCancel}
-          className="mt-3 min-h-14 w-full text-lg font-bold text-[#a6423c]"
+          className="mt-3 min-h-14 w-full rounded-2xl border-2 border-error/20 bg-card text-lg font-bold text-error hover:bg-error/10 hover:border-error transition-all cursor-pointer"
         >
           Hủy chuyến xe
         </button>
@@ -838,14 +850,14 @@ function ActiveElderRide({
         <button
           type="button"
           onClick={onReset}
-          className="mt-6 min-h-20 w-full rounded-2xl bg-[#11683f] text-2xl font-black text-white"
+          className="mt-6 min-h-20 w-full rounded-2xl bg-primary text-2xl font-black text-primary-foreground hover:opacity-90 transition-all"
         >
           Đặt chuyến mới
         </button>
       )}
 
       {!finished && (
-        <div className="mt-6 flex items-center justify-center gap-3 rounded-2xl bg-[#e8f5ed] p-4 text-lg font-bold text-[#11683f]">
+        <div className="mt-6 flex items-center justify-center gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/30 p-4 text-lg font-bold text-emerald-700 dark:text-emerald-400">
           <ShieldCheck className="h-6 w-6" />
           Linh đang thấy toàn bộ chuyến đi của bà
         </div>
