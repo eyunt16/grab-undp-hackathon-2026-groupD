@@ -15,7 +15,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="h-12 w-[160px] animate-pulse rounded-full bg-muted border border-border" />
+      <div className="h-12 w-40 animate-pulse rounded-full bg-muted border border-border" />
     );
   }
 
@@ -25,7 +25,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex h-12 min-w-[160px] items-center justify-center gap-2.5 rounded-full border-2 border-border bg-card px-5 text-base font-extrabold text-foreground transition-all hover:bg-muted active:scale-95 shadow-sm focus:outline-hidden focus:ring-4 focus:ring-primary/20 cursor-pointer"
+      className="flex h-12 min-w-40 items-center justify-center gap-2.5 px-4 py-2 rounded-full border-2 border-border bg-card text-sm font-extrabold text-foreground transition-all hover:bg-muted active:scale-95 shadow-sm focus:outline-hidden focus:ring-4 focus:ring-primary/20 cursor-pointer"
       aria-label={
         isDark ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"
       }

@@ -128,7 +128,7 @@ function DrawerThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3.5 text-base font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3.5 text-sm font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
     >
       {isDark ? (
         <Sun className="h-5 w-5 text-amber-500" strokeWidth={2.5} />
