@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
 import type { GeoPoint, Trip } from "@/lib/trip";
 
-const defaultPickup: GeoPoint = { lat: 10.7864, lng: 106.6908 };
+const defaultPickup: GeoPoint = { lat: 10.878, lng: 106.8002 };
 const defaultDestination: GeoPoint = { lat: 10.7579, lng: 106.6594 };
 
 function mix(start: GeoPoint, end: GeoPoint, progress: number): GeoPoint {
@@ -14,11 +14,8 @@ function mix(start: GeoPoint, end: GeoPoint, progress: number): GeoPoint {
   };
 }
 
-function getInitialDriverLocation(pickup: GeoPoint): GeoPoint {
-  return {
-    lat: pickup.lat + 0.008,
-    lng: pickup.lng - 0.006,
-  };
+function getInitialDriverLocation(_pickup: GeoPoint): GeoPoint {
+  return { lat: 10.7725, lng: 106.6581 };
 }
 
 function getVehicleLocation(

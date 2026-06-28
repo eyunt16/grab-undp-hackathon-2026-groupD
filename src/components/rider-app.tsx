@@ -108,11 +108,8 @@ function mixPoint(start: GeoPoint, end: GeoPoint, progress: number): GeoPoint {
   };
 }
 
-function getInitialDriverLocation(pickup: GeoPoint): GeoPoint {
-  return {
-    lat: pickup.lat + 0.008,
-    lng: pickup.lng - 0.006,
-  };
+function getInitialDriverLocation(_pickup: GeoPoint): GeoPoint {
+  return { lat: 10.7725, lng: 106.6581 };
 }
 
 function getDriverLocationForTrip(
@@ -309,14 +306,14 @@ export function RiderApp() {
 
   const createTrip = useCallback(
     (destination: string) => {
-      const pickupLocation = { lat: 10.7864, lng: 106.6908 };
+      const pickupLocation = { lat: 10.878, lng: 106.8002 };
       const destinationLocation =
         destinationLocations[destination] ??
         destinationLocations["Bệnh viện Chợ Rẫy"];
       const newTrip: Trip = {
         id: `EM-${Date.now().toString().slice(-6)}`,
         riderName: "Mai Lan",
-        pickup: "Điểm đón hiện tại · 42 Võ Thị Sáu",
+        pickup: "ĐH Quốc tế · ĐHQG-HCM, Đông Hòa",
         destination,
         provider: "EasyCar",
         price: destination.includes("Bệnh viện") ? 68000 : 52000,
@@ -374,7 +371,7 @@ export function RiderApp() {
         vehicle: "Toyota Vios màu bạc",
         driverLocation: getDriverLocationForTrip(
           "driver_assigned",
-          trip.pickupLocation ?? { lat: 10.7864, lng: 106.6908 },
+          trip.pickupLocation ?? { lat: 10.878, lng: 106.8002 },
           trip.destinationLocation ?? destinationLocations["Bệnh viện Chợ Rẫy"],
           trip.liveProgress ?? 0,
         ),
@@ -395,7 +392,7 @@ export function RiderApp() {
         liveProgress: nextProgress,
         driverLocation: getDriverLocationForTrip(
           trip.status,
-          trip.pickupLocation ?? { lat: 10.7864, lng: 106.6908 },
+          trip.pickupLocation ?? { lat: 10.878, lng: 106.8002 },
           trip.destinationLocation ?? destinationLocations["Bệnh viện Chợ Rẫy"],
           nextProgress,
         ),
@@ -547,7 +544,7 @@ export function RiderApp() {
               liveProgress: nextProgress,
               driverLocation: getDriverLocationForTrip(
                 status,
-                trip.pickupLocation ?? { lat: 10.7864, lng: 106.6908 },
+                trip.pickupLocation ?? { lat: 10.878, lng: 106.8002 },
                 trip.destinationLocation ?? destinationLocations["Bệnh viện Chợ Rẫy"],
                 nextProgress,
               ),
