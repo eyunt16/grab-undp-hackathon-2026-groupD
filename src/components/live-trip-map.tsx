@@ -1,35 +1,24 @@
 "use client";
 
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef } from "react";
 import type { GeoPoint, Trip } from "@/lib/trip";
 
 const defaultPickup: GeoPoint = { lat: 10.7864, lng: 106.6908 };
 const defaultDestination: GeoPoint = { lat: 10.7579, lng: 106.6594 };
-function getMapStyle() {
-  return {
-    version: 8 as const,
-    sources: {
-      basemap: {
-        type: "raster" as const,
-        tiles: [
-          "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-          "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-          "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
-        ],
-        tileSize: 256,
-        maxzoom: 20,
-        attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
-      },
+const MAP_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "&copy; OpenStreetMap contributors",
     },
-    layers: [
-      {
-        id: "basemap-tiles",
-        type: "raster" as const,
-        source: "basemap",
-      },
-    ],
-  };
-}
+  },
+  layers: [{ id: "osm", type: "raster", source: "osm" }],
+  glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+};
 
 function mix(start: GeoPoint, end: GeoPoint, progress: number): GeoPoint {
   return {
@@ -110,19 +99,26 @@ export function LiveTripMap({
     let disposed = false;
 
     const initializeMap = async () => {
-      const { default: maplibregl } = await import("maplibre-gl");
+      const maplibregl = (await import("maplibre-gl")).default;
       if (disposed || !containerRef.current) return;
 
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        console.warn("[LiveTripMap] container has 0 size, retrying...");
+        await new Promise((r) => setTimeout(r, 100));
+        if (disposed || !containerRef.current) return;
+      }
+
       const map = new maplibregl.Map({
-        container: containerRef.current,
-        style: getMapStyle() as maplibregl.StyleSpecification,
+        container,
+        style: MAP_STYLE as unknown as maplibregl.StyleSpecification,
         center: [
           (pickup.lng + destination.lng) / 2,
           (pickup.lat + destination.lat) / 2,
         ],
         zoom: 13.5,
         attributionControl: false,
-        cooperativeGestures: false,
       });
       mapRef.current = map;
       map.addControl(
