@@ -129,6 +129,24 @@ export function RiderApp() {
   const previousStatus = useRef<TripStatus | null>(null);
   const voiceInitiatedRef = useRef(false);
 
+  const sosTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = () => {
+    if (sosTimeoutRef.current) return;
+    sosTimeoutRef.current = setTimeout(() => {
+      navigator.vibrate?.([100, 50, 100, 50, 500]);
+      void speak("Đã kích hoạt cuộc gọi khẩn cấp SOS tới người thân.");
+      window.location.href = "tel:+84909876543"; // Call Linh
+    }, 3000);
+  };
+
+  const handleTouchEnd = () => {
+    if (sosTimeoutRef.current) {
+      clearTimeout(sosTimeoutRef.current);
+      sosTimeoutRef.current = null;
+    }
+  };
+
   const confirmIntentRef = useRef<() => void>(() => undefined);
   const rejectIntentRef = useRef<() => void>(() => undefined);
 
@@ -367,7 +385,13 @@ export function RiderApp() {
   if (!ready) return <div className="min-h-screen bg-background" />;
 
   return (
-    <main className="min-h-screen bg-background text-foreground transition-colors duration-200">
+    <main
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleTouchStart}
+      onMouseUp={handleTouchEnd}
+      className="min-h-screen bg-background text-foreground transition-colors duration-200"
+    >
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
           <Link
@@ -776,6 +800,10 @@ function ActiveElderRide({
             <p className="mt-1 text-4xl font-black tracking-[0.08em] text-amber-950 dark:text-amber-100">
               {trip.plate}
             </p>
+          </div>
+          <div className="mt-4 flex items-center gap-3 rounded-2xl bg-emerald-500/10 p-4 text-left text-lg font-bold text-emerald-600 dark:text-emerald-400">
+            <ShieldCheck className="h-6 w-6 shrink-0 text-emerald-500" />
+            <span>Tài xế đã nhận thông báo: Đón tại cửa & Hỗ trợ cụ bà lên xe.</span>
           </div>
         </div>
       )}

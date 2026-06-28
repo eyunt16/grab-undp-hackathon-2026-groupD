@@ -41,13 +41,13 @@ const allowedIntentsByStage: Record<RiderStage, ParsedIntent["type"][]> = {
 
 const stageRejectionText: Record<RiderStage, string> = {
   start_booking:
-    "Toi chi co the dat xe den Nha, Benh vien, Dai hoc, Nha Linh hoac goi Linh. Vui long lam theo huong dan hien tai.",
+    "Tôi chỉ có thể đặt xe đến Nhà, Bệnh viện, trường Đại Học, Nhà Linh, hoặc gọi cho Linh. Vui lòng làm theo hướng dẫn hiện tại.",
   confirm_booking:
-    "Luc nay toi chi can ban tra loi dung hoac khong de xac nhan yeu cau. Vui long lam theo huong dan hien tai.",
+    "Lúc này tôi chỉ cần bạn trả lời đúng hoặc không để xác nhận yêu cầu, vui lòng làm theo hướng dẫn hiện tại.",
   active_trip:
-    "Luc nay toi chi co the huy chuyen xe hoac goi Linh. Vui long lam theo huong dan hien tai.",
+    "Lúc này tôi chỉ có thể hủy chuyến xe hoặc gọi cho Linh. Vui lòng làm theo hướng dẫn hiện tại.",
   confirm_cancel:
-    "Luc nay toi chi can ban xac nhan co huy chuyen xe hay khong. Vui long lam theo huong dan hien tai.",
+    "Lúc này tôi chỉ cần bạn xác nhận có hủy chuyến xe hay không. Vui lòng làm theo hướng dẫn hiện tại.",
 };
 
 const stageSubPrompts: Record<RiderStage, string> = {
@@ -193,10 +193,10 @@ export async function parseIntent(
   const context =
     rawContext && typeof rawContext === "object"
       ? (rawContext as {
-          pendingIntent?: unknown;
-          tripStatus?: unknown;
-          history?: unknown;
-        })
+        pendingIntent?: unknown;
+        tripStatus?: unknown;
+        history?: unknown;
+      })
       : {};
 
   const { output } = await generateText({

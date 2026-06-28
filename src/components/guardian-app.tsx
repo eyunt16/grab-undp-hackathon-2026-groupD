@@ -8,10 +8,13 @@ import {
   HeartHandshake,
   MessageCircle,
   Phone,
+  ShieldCheck,
+  Siren,
   Star,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { LiveTripMap } from "@/components/live-trip-map";
 import { useTripSync } from "@/hooks/use-trip-sync";
@@ -121,75 +124,188 @@ function ActiveGuardianTrip({
   trip: Trip;
   updateTrip: (updates: Partial<Trip>) => void;
 }) {
+  const [isOffRoute, setIsOffRoute] = useState(false);
+  const [alerts, setAlerts] = useState<string[]>([
+    "🛡️ Tài xế Minh Quân đã xác nhận hỗ trợ cụ bà.",
+    "📍 Chuyến xe bắt đầu khởi hành.",
+  ]);
+
   const isActive = !["completed", "cancelled"].includes(trip.status);
   const currentOrder = statusOrder[trip.status];
 
+  const speakAlert = (text: string) => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "vi-VN";
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Monitor off route state for voice assistant and alerts log
+  useEffect(() => {
+    if (isOffRoute) {
+      speakAlert("Cảnh báo khẩn cấp! Phát hiện xe của bà Mai Lan đang di chuyển lệch lộ trình đăng ký!");
+      const timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      setAlerts(prev => [
+        `⚠️ Cảnh báo lệch lộ trình (${timeStr})`,
+        ...prev
+      ]);
+    } else {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    }
+  }, [isOffRoute]);
+
+  // Monitor status changes for alerts log
+  useEffect(() => {
+    const timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    if (trip.status === "completed") {
+      setAlerts(prev => [
+        `✅ Bàn giao thành công tại sảnh chung cư (${timeStr})`,
+        ...prev
+      ]);
+    } else if (trip.status === "cancelled") {
+      setAlerts(prev => [
+        `❌ Chuyến xe đã hủy (${timeStr})`,
+        ...prev
+      ]);
+    } else if (trip.status === "driver_arrived") {
+      setAlerts(prev => [
+        `📍 Tài xế đã đến điểm đón (${timeStr})`,
+        ...prev
+      ]);
+    }
+  }, [trip.status]);
+
+  useEffect(() => {
+    if (!isActive) {
+      setIsOffRoute(false);
+    }
+  }, [isActive]);
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_380px]">
-      <section className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-[0_18px_55px_rgba(0,0,0,0.03)]">
-        <div className="flex flex-col justify-between gap-4 border-b border-border p-6 sm:flex-row sm:items-center sm:p-7">
-          <div className="flex items-center gap-4">
-            <div className="grid h-14 w-14 place-items-center rounded-full bg-amber-500 text-lg font-black text-white">
-              ML
+      <div className="space-y-6">
+        {isOffRoute && (
+          <div className="flex items-center justify-between gap-4 rounded-[2rem] border-2 border-error/30 bg-error/10 p-5 text-error animate-pulse shadow-sm dark:bg-error/20">
+            <div className="flex items-center gap-4">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-error text-white">
+                <Siren className="h-6 w-6 animate-bounce" />
+              </span>
+              <div>
+                <p className="font-black text-lg">⚠️ CẢNH BÁO LỆCH LỘ TRÌNH!</p>
+                <p className="mt-0.5 text-sm font-bold opacity-80">
+                  Xe đã di chuyển lệch quá 250m so với lộ trình về nhà.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Chuyến đi của bà Mai Lan
-              </p>
-              <h2 className="mt-0.5 text-2xl font-black tracking-tight">
-                {statusCopy[trip.status]}
-              </h2>
-            </div>
+            <a
+              href="tel:+84901234567"
+              className="shrink-0 rounded-xl bg-error px-4 py-2.5 text-sm font-black text-white transition hover:opacity-90"
+            >
+              Gọi tài xế
+            </a>
           </div>
-          <div
-            className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${isActive ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
-          >
-            <span
-              className={`h-2 w-2 rounded-full ${isActive ? "animate-pulse bg-emerald-500" : "bg-neutral-400 dark:bg-neutral-500"}`}
-            />
-            {isActive ? "Trực tiếp" : "Đã cập nhật"}
-          </div>
-        </div>
+        )}
 
-        <div className="relative">
-          <LiveTripMap trip={trip} />
-          <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-card/95 border border-border p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-[350px]">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Điểm đến
-              </p>
-              <p className="mt-1 font-bold">{trip.destination}</p>
+        <section className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-[0_18px_55px_rgba(0,0,0,0.03)]">
+          <div className="flex flex-col justify-between gap-4 border-b border-border p-6 sm:flex-row sm:items-center sm:p-7">
+            <div className="flex items-center gap-4">
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-amber-500 text-lg font-black text-white">
+                ML
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Chuyến đi của bà Mai Lan</p>
+                <h2 className="mt-0.5 text-2xl font-black tracking-tight">
+                  {statusCopy[trip.status]}
+                </h2>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Thời gian đón</p>
-              <p className="font-black">{trip.eta} phút</p>
+            <div
+              className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold ${isActive ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${isActive ? "animate-pulse bg-emerald-500" : "bg-neutral-400 dark:bg-neutral-500"}`}
+              />
+              {isActive ? "Trực tiếp" : "Đã cập nhật"}
             </div>
           </div>
-        </div>
-      </section>
+
+          <div className="relative">
+            <LiveTripMap trip={trip} />
+            {isActive && (
+              <button
+                onClick={() => setIsOffRoute((prev) => !prev)}
+                className={`absolute right-4 top-4 z-10 flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black shadow-md transition ${isOffRoute ? "bg-error text-white hover:opacity-90" : "bg-card text-foreground hover:bg-muted border border-border"}`}
+              >
+                <Siren className="h-4 w-4" />
+                {isOffRoute ? "Tắt cảnh báo lệch hướng" : "Giả lập đi lệch hướng"}
+              </button>
+            )}
+            <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-card/95 border border-border p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-[350px]">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Điểm đến
+                </p>
+                <p className="mt-1 font-bold">{trip.destination}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Thời gian đón</p>
+                <p className="font-black">{trip.eta} phút</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div className="space-y-6">
         <PersonCard />
 
         <section className="rounded-[1.75rem] border border-border bg-card p-6 shadow-[0_14px_42px_rgba(0,0,0,0.02)]">
+          <h3 className="font-black text-lg">Thông báo & Cảnh báo</h3>
+          <div className="mt-4 max-h-48 overflow-y-auto space-y-2.5 pr-1">
+            {alerts.map((alert, idx) => {
+              const isWarning = alert.includes("⚠️") || alert.includes("Cảnh báo");
+              return (
+                <div
+                  key={idx}
+                  className={`p-3.5 rounded-2xl text-sm font-bold leading-normal transition ${isWarning ? "bg-error/10 text-error border border-error/20" : "bg-muted text-muted-foreground"}`}
+                >
+                  {alert}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-[1.75rem] border border-border bg-card p-6 shadow-[0_14px_42px_rgba(0,0,0,0.02)]">
           <h3 className="font-black">Chi tiết chuyến đi</h3>
           <div className="mt-5 space-y-4">
             {trip.driverName ? (
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-primary font-black text-primary-foreground">
-                  MQ
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold">{trip.driverName}</p>
-                    <span className="flex items-center text-xs font-bold">
-                      <Star className="mr-1 h-3 w-3 fill-amber-400 text-amber-400" />
-                      4.9
-                    </span>
+              <div className="space-y-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-11 w-11 place-items-center rounded-full bg-primary font-black text-primary-foreground">
+                    MQ
                   </div>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {trip.vehicle} · {trip.plate}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold">{trip.driverName}</p>
+                      <span className="flex items-center text-xs font-bold">
+                        <Star className="mr-1 h-3 w-3 fill-amber-400 text-amber-400" />
+                        4.9
+                      </span>
+                    </div>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {trip.vehicle} · {trip.plate}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>Tài xế đã xác nhận hỗ trợ cụ già đi lại khó khăn</span>
                 </div>
               </div>
             ) : (
@@ -200,9 +316,7 @@ function ActiveGuardianTrip({
             )}
             <div className="flex items-center gap-3 border-t border-border pt-4">
               <Clock3 className="h-5 w-5 text-primary" />
-              <span className="flex-1 text-sm text-muted-foreground">
-                Giá cước chuyến xe
-              </span>
+              <span className="flex-1 text-sm text-muted-foreground">Giá cước chuyến xe</span>
               <strong className="text-sm">
                 ₫{trip.price.toLocaleString("vi-VN")}
               </strong>
@@ -257,6 +371,22 @@ function ActiveGuardianTrip({
               );
             })}
           </div>
+          {trip.status === "completed" && (
+            <div className="mt-5 rounded-2xl border border-border bg-muted/40 p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ảnh bàn giao từ tài xế</p>
+              <div className="mt-2.5 overflow-hidden rounded-xl border border-border">
+                <img
+                  src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=600"
+                  alt="Ảnh bàn giao cụ bà về nhà"
+                  className="h-44 w-full object-cover"
+                />
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                <span>Bàn giao thành công tại sảnh chung cư</span>
+              </div>
+            </div>
+          )}
           {isActive && (
             <button
               type="button"
