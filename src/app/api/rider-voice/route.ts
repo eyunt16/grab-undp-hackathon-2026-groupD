@@ -11,7 +11,6 @@ import {
 } from "./helpers";
 
 export async function POST(request: Request) {
-  const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
   try {
@@ -23,7 +22,10 @@ export async function POST(request: Request) {
 
     if (contentType.includes("multipart/form-data")) {
       if (!openaiKey) {
-        return errorResponse("Missing OPENAI_API_KEY for audio transcription.", 500);
+        return errorResponse(
+          "Missing OPENAI_API_KEY for audio transcription.",
+          500,
+        );
       }
       const form = await request.formData();
       const audio = form.get("audio");
@@ -84,7 +86,10 @@ export async function POST(request: Request) {
     try {
       speech = await textToSpeech(intent.replyText);
     } catch (err) {
-      console.warn("TTS generation failed in route.ts, fallback to client-side:", err);
+      console.warn(
+        "TTS generation failed in route.ts, fallback to client-side:",
+        err,
+      );
     }
 
     return voiceJson({
