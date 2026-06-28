@@ -1,24 +1,11 @@
 "use client";
 
-import "maplibre-gl/dist/maplibre-gl.css";
+import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
 import type { GeoPoint, Trip } from "@/lib/trip";
 
 const defaultPickup: GeoPoint = { lat: 10.7864, lng: 106.6908 };
 const defaultDestination: GeoPoint = { lat: 10.7579, lng: 106.6594 };
-const MAP_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: "raster",
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "&copy; OpenStreetMap contributors",
-    },
-  },
-  layers: [{ id: "osm", type: "raster", source: "osm" }],
-  glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-};
 
 function mix(start: GeoPoint, end: GeoPoint, progress: number): GeoPoint {
   return {
@@ -58,10 +45,10 @@ function getVehicleLocation(
 async function fetchRoute(
   pickup: GeoPoint,
   destination: GeoPoint,
-): Promise<number[][]> {
-  const fallback = [
-    [pickup.lng, pickup.lat],
-    [destination.lng, destination.lat],
+): Promise<[number, number][]> {
+  const fallback: [number, number][] = [
+    [pickup.lat, pickup.lng],
+    [destination.lat, destination.lng],
   ];
   try {
     const url = `https://router.project-osrm.org/route/v1/driving/${pickup.lng},${pickup.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
@@ -69,7 +56,9 @@ async function fetchRoute(
     if (!res.ok) return fallback;
     const data = await res.json();
     const coords = data?.routes?.[0]?.geometry?.coordinates;
-    if (Array.isArray(coords) && coords.length > 1) return coords;
+    if (Array.isArray(coords) && coords.length > 1) {
+      return coords.map((c: number[]) => [c[1], c[0]] as [number, number]);
+    }
     return fallback;
   } catch {
     return fallback;
@@ -84,185 +73,125 @@ export function LiveTripMap({
   compact?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<import("maplibre-gl").Map | null>(null);
-  const vehicleMarkerRef = useRef<import("maplibre-gl").Marker | null>(null);
-  const routeCoordinatesRef = useRef<number[][]>([]);
+  const mapRef = useRef<L.Map | null>(null);
+  const vehicleMarkerRef = useRef<L.Marker | null>(null);
+  const routeLayerRef = useRef<L.Polyline | null>(null);
 
   const pickup = trip.pickupLocation ?? defaultPickup;
   const destination = trip.destinationLocation ?? defaultDestination;
   const vehicle = getVehicleLocation(trip, pickup, destination);
-  const livePositionRef = useRef(vehicle);
-  livePositionRef.current = vehicle;
+  const vehicleRef = useRef(vehicle);
+  vehicleRef.current = vehicle;
 
   useEffect(() => {
     if (!containerRef.current) return;
     let disposed = false;
 
-    const initializeMap = async () => {
-      const maplibregl = (await import("maplibre-gl")).default;
+    const init = async () => {
+      const L = (await import("leaflet")).default;
       if (disposed || !containerRef.current) return;
 
-      const container = containerRef.current;
-      const rect = container.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
-        console.warn("[LiveTripMap] container has 0 size, retrying...");
-        await new Promise((r) => setTimeout(r, 100));
-        if (disposed || !containerRef.current) return;
-      }
-
-      const map = new maplibregl.Map({
-        container,
-        style: MAP_STYLE as unknown as maplibregl.StyleSpecification,
+      const map = L.map(containerRef.current, {
         center: [
-          (pickup.lng + destination.lng) / 2,
           (pickup.lat + destination.lat) / 2,
+          (pickup.lng + destination.lng) / 2,
         ],
-        zoom: 13.5,
+        zoom: 14,
+        zoomControl: false,
         attributionControl: false,
       });
       mapRef.current = map;
-      map.addControl(
-        new maplibregl.NavigationControl({ showCompass: false }),
-        "top-right",
-      );
-      map.addControl(
-        new maplibregl.AttributionControl({ compact: true }),
-        "bottom-right",
-      );
 
-      new maplibregl.Marker({
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      L.control.zoom({ position: "topright" }).addTo(map);
+      L.control.attribution({ position: "bottomright", prefix: false }).addTo(map);
+
+      const pickupIcon = L.divIcon({
+        html: '<div style="width:18px;height:18px;border-radius:50%;background:#0047AB;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+        className: "",
+      });
+      const destIcon = L.divIcon({
+        html: '<div style="width:20px;height:20px;border-radius:50%;background:#ef9d3d;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        className: "",
+      });
+      const vehicleIcon = L.divIcon({
+        html: '<div style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))">🚗</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        className: "",
+      });
+
+      L.marker([pickup.lat, pickup.lng], { icon: pickupIcon }).addTo(map);
+      L.marker([destination.lat, destination.lng], { icon: destIcon }).addTo(map);
+
+      const cur = vehicleRef.current;
+      vehicleMarkerRef.current = L.marker([cur.lat, cur.lng], {
+        icon: vehicleIcon,
+        zIndexOffset: 1000,
+      }).addTo(map);
+
+      const routeCoords = await fetchRoute(pickup, destination);
+      if (disposed) return;
+
+      routeLayerRef.current = L.polyline(routeCoords, {
         color: "#0047AB",
-        scale: 1.1,
-      })
-        .setLngLat([pickup.lng, pickup.lat])
-        .addTo(map);
-      new maplibregl.Marker({
-        color: "#ef9d3d",
-        scale: 1.2,
-      })
-        .setLngLat([destination.lng, destination.lat])
-        .addTo(map);
+        weight: 5,
+        opacity: 0.9,
+      }).addTo(map);
 
-      const vehicleElement = document.createElement("div");
-      vehicleElement.className = "aloxe-live-vehicle";
-      const vehicleIcon = document.createElement("span");
-      vehicleIcon.textContent = "🚗";
-      const vehicleLabel = document.createElement("strong");
-      vehicleLabel.textContent = "VỊ TRÍ TRỰC TIẾP";
-      vehicleElement.append(vehicleIcon, vehicleLabel);
-      const currentVehicle = livePositionRef.current;
-      vehicleMarkerRef.current = new maplibregl.Marker({
-        element: vehicleElement,
-        anchor: "center",
-      })
-        .setLngLat([currentVehicle.lng, currentVehicle.lat])
-        .addTo(map);
-
-      map.on("load", async () => {
-        if (disposed) return;
-        const routeCoords = await fetchRoute(pickup, destination);
-        if (disposed) return;
-        routeCoordinatesRef.current = routeCoords;
-        map.addSource("trip-route", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: routeCoords,
-            },
-          },
-        });
-        map.addLayer({
-          id: "trip-route-outline",
-          type: "line",
-          source: "trip-route",
-          paint: {
-            "line-color": "#ffffff",
-            "line-width": 10,
-            "line-opacity": 0.9,
-          },
-        });
-        map.addLayer({
-          id: "trip-route",
-          type: "line",
-          source: "trip-route",
-          paint: {
-            "line-color": "#0047AB",
-            "line-width": 5,
-            "line-opacity": 0.95,
-          },
-        });
-        const bounds = new maplibregl.LngLatBounds();
-        for (const coord of routeCoords) {
-          bounds.extend(coord as [number, number]);
-        }
-        bounds.extend([currentVehicle.lng, currentVehicle.lat]);
-        map.fitBounds(bounds, {
-          padding: compact ? 42 : 70,
-          duration: 0,
-          maxZoom: 15,
-        });
-      });
-
-      map.on("error", () => {
-        containerRef.current?.setAttribute("data-map-status", "loading-error");
-      });
-
-      return () => {
-        vehicleMarkerRef.current?.remove();
-        map.remove();
-      };
+      const bounds = L.latLngBounds([
+        [pickup.lat, pickup.lng],
+        [destination.lat, destination.lng],
+        [cur.lat, cur.lng],
+      ]);
+      if (routeLayerRef.current) {
+        bounds.extend(routeLayerRef.current.getBounds());
+      }
+      map.fitBounds(bounds, { padding: [compact ? 30 : 50, compact ? 30 : 50] });
     };
 
-    let cleanup: (() => void) | undefined;
-    void initializeMap().then((removeMap) => {
-      if (disposed) {
-        removeMap?.();
-        return;
-      }
-      cleanup = removeMap;
-    });
+    void init();
+
     return () => {
       disposed = true;
-      cleanup?.();
-      mapRef.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
       vehicleMarkerRef.current = null;
+      routeLayerRef.current = null;
     };
   }, [compact, destination.lat, destination.lng, pickup.lat, pickup.lng]);
 
   useEffect(() => {
-    vehicleMarkerRef.current?.setLngLat([vehicle.lng, vehicle.lat]);
-    if (trip.status === "in_progress") {
-      mapRef.current?.easeTo({
-        center: [vehicle.lng, vehicle.lat],
-        duration: 900,
-      });
-      return;
+    if (!vehicleMarkerRef.current || !mapRef.current) return;
+    vehicleMarkerRef.current.setLatLng([vehicle.lat, vehicle.lng]);
+    if (trip.status === "in_progress" || trip.status === "driver_assigned") {
+      mapRef.current.panTo([vehicle.lat, vehicle.lng], { animate: true, duration: 0.8 });
     }
-    if (trip.driverLocation && trip.status === "driver_assigned") {
-      mapRef.current?.easeTo({
-        center: [vehicle.lng, vehicle.lat],
-        duration: 700,
-      });
-    }
-  }, [trip.driverLocation, trip.status, vehicle.lat, vehicle.lng]);
+  }, [trip.status, vehicle.lat, vehicle.lng]);
 
   return (
     <section
       className={`relative overflow-hidden bg-muted ${compact ? "h-72 rounded-t-[1.35rem]" : "h-[390px] sm:h-[480px]"}`}
-      aria-label="Bản đồ MapLibre hiển thị vị trí trực tiếp"
+      aria-label="Bản đồ hiển thị vị trí trực tiếp"
     >
       <div ref={containerRef} className="absolute inset-0 z-[1]" />
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold text-muted-foreground -z-0">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold text-muted-foreground">
         Đang tải bản đồ...
       </div>
-      <div className="pointer-events-none absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-2 text-sm font-black text-primary shadow-md">
+      <div className="pointer-events-none absolute left-4 top-4 z-[1000] flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-2 text-sm font-black text-primary shadow-md">
         <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500" />
         ĐANG CẬP NHẬT
       </div>
     </section>
   );
 }
-
