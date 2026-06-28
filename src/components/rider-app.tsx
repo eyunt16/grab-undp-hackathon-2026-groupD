@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppHeader } from "@/components/app-header";
 import { LiveTripMap } from "@/components/live-trip-map";
-import { ThemeToggle } from "@/components/theme-toggle";
 import {
   type AiVoiceIntent,
   type RiderVoiceStage,
@@ -395,34 +395,56 @@ export function RiderApp() {
       onMouseUp={handleTouchEnd}
       className="min-h-screen bg-background text-foreground transition-colors duration-200"
     >
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5 sm:px-8">
-          <Link
-            href="/"
-            className="flex min-h-12 items-center gap-3 text-xl font-black text-foreground"
-            aria-label="Về trang chính"
-          >
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground">
-              <MapPin className="h-6 w-6" />
-            </span>
-            AloXe
-          </Link>
+      <AppHeader
+        rightSlot={
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link
               href="/guardian"
               target="_blank"
-              className="rounded-full border-2 border-primary/20 bg-card px-4 py-2 text-base font-bold text-primary transition hover:bg-primary/10 hover:border-primary"
+              className="rounded-full border-2 border-primary/20 bg-card px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10 hover:border-primary"
             >
               Người thân giám sát
             </Link>
-            <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2.5 text-base font-bold text-primary">
-              <ShieldCheck className="h-5 w-5" />
+            <div className="flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-bold text-primary">
+              <ShieldCheck className="h-4 w-4" />
               Linh đang theo dõi
             </div>
           </div>
-        </div>
-      </header>
+        }
+        mobileDrawerSlot={
+          <div className="space-y-3">
+            {/* Linh watching status */}
+            <div className="flex items-center gap-3 rounded-2xl bg-primary/10 border border-primary/20 px-4 py-3.5">
+              <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <p className="text-sm font-black text-primary">
+                  Linh đang theo dõi
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Người thân đang giám sát chuyến đi
+                </p>
+              </div>
+            </div>
+            {/* Guardian link */}
+            <Link
+              href="/guardian"
+              target="_blank"
+              className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3.5 text-base font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+            >
+              <Phone className="h-5 w-5 text-muted-foreground" />
+              Người thân giám sát
+            </Link>
+            {/* Emergency call */}
+            <a
+              href="tel:+84909876543"
+              className="flex w-full items-center gap-3 rounded-2xl bg-red-500/10 border border-red-500/20 px-4 py-3.5 text-base font-bold text-red-600 dark:text-red-400 transition-all hover:bg-red-500/20 active:scale-[0.98]"
+            >
+              <Siren className="h-5 w-5" />
+              Gọi khẩn cấp cho Linh
+            </a>
+          </div>
+        }
+      />
 
       {/* Persistent Conversation Log */}
       <div className="mx-auto w-full max-w-3xl px-5 pt-6">
@@ -869,7 +891,9 @@ function ActiveElderRide({
           </div>
           <div className="mt-4 flex items-center gap-3 rounded-2xl bg-emerald-500/10 p-4 text-left text-lg font-bold text-emerald-600 dark:text-emerald-400">
             <ShieldCheck className="h-6 w-6 shrink-0 text-emerald-500" />
-            <span>Tài xế đã nhận thông báo: Đón tại cửa & Hỗ trợ cụ bà lên xe.</span>
+            <span>
+              Tài xế đã nhận thông báo: Đón tại cửa & Hỗ trợ cụ bà lên xe.
+            </span>
           </div>
         </div>
       )}

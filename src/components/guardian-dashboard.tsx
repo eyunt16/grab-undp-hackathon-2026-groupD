@@ -4,18 +4,15 @@ import {
   AlertCircle,
   AlertTriangle,
   Bell,
-  Calendar,
   Car,
   CreditCard,
   MapPin,
   Phone,
-  RefreshCw,
   Send,
   Shield,
-  User,
   X,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface GuardianDashboardProps {
   channel: BroadcastChannel | null;
@@ -75,7 +72,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
     if (!showSMSAlert) return;
     const timer = setTimeout(() => setShowSMSAlert(false), 6000);
     return () => clearTimeout(timer);
-  }, [showSMSAlert, smsContent]);
+  }, [showSMSAlert]);
 
   // Sync state with parent's phone simulator via BroadcastChannel
   useEffect(() => {
@@ -237,11 +234,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
   };
 
   return (
-    <div
-      className="flex flex-col w-full bg-[#0d1225] border border-white/[0.06] rounded-3xl p-6 text-white shadow-xl shadow-black/20 min-h-[620px]"
-      role="region"
-      aria-label="Bảng theo dõi người thân"
-    >
+    <div className="flex flex-col w-full bg-[#0d1225] border border-white/6 rounded-3xl p-6 text-white shadow-xl shadow-black/20 min-h-155">
       {/* Dashboard Header */}
       <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
         <div>
@@ -298,7 +291,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
       </div>
 
       {/* Simulated Live Route Map */}
-      <div className="bg-slate-950 rounded-2xl border border-slate-850 p-4 mb-4 relative overflow-hidden flex-1 flex flex-col justify-center min-h-[160px]">
+      <div className="bg-slate-950 rounded-2xl border border-slate-850 p-4 mb-4 relative overflow-hidden flex-1 flex flex-col justify-center min-h-40">
         {tripState === "idle" ? (
           <div className="text-center text-slate-500 text-xs py-10 flex flex-col items-center gap-2 select-none">
             <MapPin className="w-8 h-8 text-slate-700 animate-pulse" />
@@ -321,7 +314,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
               <div className="absolute w-full h-1.5 bg-slate-800 rounded-full"></div>
               {/* Active path */}
               <div
-                className="absolute left-0 h-1.5 bg-emerald-500 rounded-full transition-all duration-[6000ms]"
+                className="absolute left-0 h-1.5 bg-emerald-500 rounded-full transition-all duration-6000"
                 style={{
                   width:
                     tripState === "booking"
@@ -343,7 +336,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
               {/* Target pin */}
               <div className="absolute right-[5%] flex flex-col items-center">
                 <div className="w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-slate-900 z-10 shadow-lg animate-pulse"></div>
-                <span className="text-[9px] text-slate-400 mt-1 font-bold truncate max-w-[120px]">
+                <span className="text-[9px] text-slate-400 mt-1 font-bold truncate max-w-30">
                   {tripDetails.destination}
                 </span>
               </div>
@@ -386,11 +379,17 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
                     cầu Sài Gòn.
                   </p>
                 </div>
-                <div className="flex gap-2 w-full max-w-[240px]">
-                  <button className="flex-1 py-1.5 bg-red-600 text-white font-bold rounded-lg text-[10px]">
+                <div className="flex gap-2 w-full max-w-60">
+                  <button
+                    type="button"
+                    className="flex-1 py-1.5 bg-red-600 text-white font-bold rounded-lg text-[10px]"
+                  >
                     <Phone className="w-3 h-3 inline mr-1" /> Gọi tài xế
                   </button>
-                  <button className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-lg text-[10px]">
+                  <button
+                    type="button"
+                    className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-lg text-[10px]"
+                  >
                     <Phone className="w-3 h-3 inline mr-1" /> Gọi bà Lan
                   </button>
                 </div>
@@ -452,6 +451,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
 
           <div className="flex gap-2 mt-4">
             <button
+              type="button"
               onClick={triggerRemoteBooking}
               disabled={tripState !== "idle"}
               className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-750 border border-emerald-500/20 text-xs font-bold rounded-xl transition text-center"
@@ -460,6 +460,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
             </button>
             {tripState !== "idle" && (
               <button
+                type="button"
                 onClick={triggerRemoteCancel}
                 className="px-3.5 py-2 bg-red-950/30 hover:bg-red-950/50 border border-red-900/40 text-red-400 text-xs font-bold rounded-xl transition"
               >
@@ -479,7 +480,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
           </div>
 
           <div
-            className="flex-1 overflow-y-auto max-h-[140px] pr-1 flex flex-col gap-2"
+            className="flex-1 overflow-y-auto max-h-35 pr-1 flex flex-col gap-2"
             aria-live="polite"
           >
             {notifications.map((n) => (
@@ -511,6 +512,7 @@ export default function GuardianDashboard({ channel }: GuardianDashboardProps) {
           {/* Quick Simulation Options */}
           {tripState !== "idle" && (
             <button
+              type="button"
               onClick={toggleOffRoute}
               className="mt-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-[10px] text-slate-300 font-bold border border-slate-700 rounded-lg flex items-center justify-center gap-1.5 transition"
             >

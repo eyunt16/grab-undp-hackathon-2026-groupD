@@ -10,15 +10,17 @@ import {
   Phone,
   ShieldCheck,
   Siren,
+  Smartphone,
   Star,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AppHeader } from "@/components/app-header";
 import { LiveTripMap } from "@/components/live-trip-map";
 import { useTripSync } from "@/hooks/use-trip-sync";
 import { statusCopy, type Trip, type TripStatus } from "@/lib/trip";
+import Image from "next/image";
 
 const timeline: { status: TripStatus; label: string }[] = [
   { status: "driver_assigned", label: "Tài xế đã nhận chuyến" },
@@ -42,6 +44,8 @@ export function GuardianApp() {
   return (
     <main className="min-h-screen bg-background text-foreground transition-colors duration-200">
       <AppHeader
+        backHref="/"
+        backLabel="Trang chủ"
         rightSlot={
           <div className="flex items-center gap-2">
             <button
@@ -54,6 +58,47 @@ export function GuardianApp() {
             <div className="grid h-10 w-10 place-items-center rounded-full bg-primary text-sm font-black text-primary-foreground">
               LT
             </div>
+          </div>
+        }
+        mobileDrawerSlot={
+          <div className="space-y-3">
+            {/* Profile */}
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/40 px-4 py-3.5">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-primary text-sm font-black text-primary-foreground shrink-0">
+                LT
+              </div>
+              <div>
+                <p className="font-black text-sm">Linh Trần</p>
+                <p className="text-xs text-muted-foreground">Người giám sát</p>
+              </div>
+            </div>
+
+            {/* Notifications placeholder */}
+            <button
+              type="button"
+              className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3.5 text-base font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+            >
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              Thông báo
+            </button>
+
+            {/* Open rider app */}
+            <Link
+              href="/ride"
+              className="flex w-full items-center gap-3 rounded-2xl border border-border bg-muted/50 px-4 py-3.5 text-base font-bold text-foreground transition-all hover:bg-muted active:scale-[0.98]"
+            >
+              <Smartphone className="h-5 w-5 text-muted-foreground" />
+              Mở ứng dụng đặt xe
+            </Link>
+
+            {/* Call Mai Lan */}
+            <a
+              href="tel:+84901234567"
+              className="flex w-full items-center gap-3 rounded-2xl bg-primary/10 border border-primary/20 px-4 py-3.5 text-base font-bold text-primary transition-all hover:bg-primary/20 active:scale-[0.98]"
+            >
+              <Phone className="h-5 w-5" />
+              Gọi cho bà Mai Lan
+            </a>
           </div>
         }
       />
@@ -94,7 +139,7 @@ export function GuardianApp() {
 function EmptyGuardian() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <section className="flex min-h-[440px] flex-col items-center justify-center rounded-[2rem] border border-border bg-card p-8 text-center shadow-[0_16px_48px_rgba(0,0,0,0.02)]">
+      <section className="flex min-h-110 flex-col items-center justify-center rounded-[2rem] border border-border bg-card p-8 text-center shadow-[0_16px_48px_rgba(0,0,0,0.02)]">
         <div className="grid h-20 w-20 place-items-center rounded-full bg-primary/10 text-primary">
           <HeartHandshake className="h-9 w-9" />
         </div>
@@ -133,7 +178,7 @@ function ActiveGuardianTrip({
   const isActive = !["completed", "cancelled"].includes(trip.status);
   const currentOrder = statusOrder[trip.status];
 
-  const speakAlert = (text: string) => {
+  const speakAlert = useCallback((text: string) => {
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
@@ -141,42 +186,41 @@ function ActiveGuardianTrip({
       utterance.rate = 1.0;
       window.speechSynthesis.speak(utterance);
     }
-  };
+  }, []);
 
   // Monitor off route state for voice assistant and alerts log
   useEffect(() => {
     if (isOffRoute) {
-      speakAlert("Cảnh báo khẩn cấp! Phát hiện xe của bà Mai Lan đang di chuyển lệch lộ trình đăng ký!");
-      const timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-      setAlerts(prev => [
-        `⚠️ Cảnh báo lệch lộ trình (${timeStr})`,
-        ...prev
-      ]);
+      speakAlert(
+        "Cảnh báo khẩn cấp! Phát hiện xe của bà Mai Lan đang di chuyển lệch lộ trình đăng ký!",
+      );
+      const timeStr = new Date().toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      setAlerts((prev) => [`⚠️ Cảnh báo lệch lộ trình (${timeStr})`, ...prev]);
     } else {
       if (typeof window !== "undefined" && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     }
-  }, [isOffRoute]);
+  }, [isOffRoute, speakAlert]);
 
   // Monitor status changes for alerts log
   useEffect(() => {
-    const timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    const timeStr = new Date().toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     if (trip.status === "completed") {
-      setAlerts(prev => [
+      setAlerts((prev) => [
         `✅ Bàn giao thành công tại sảnh chung cư (${timeStr})`,
-        ...prev
+        ...prev,
       ]);
     } else if (trip.status === "cancelled") {
-      setAlerts(prev => [
-        `❌ Chuyến xe đã hủy (${timeStr})`,
-        ...prev
-      ]);
+      setAlerts((prev) => [`❌ Chuyến xe đã hủy (${timeStr})`, ...prev]);
     } else if (trip.status === "driver_arrived") {
-      setAlerts(prev => [
-        `📍 Tài xế đã đến điểm đón (${timeStr})`,
-        ...prev
-      ]);
+      setAlerts((prev) => [`📍 Tài xế đã đến điểm đón (${timeStr})`, ...prev]);
     }
   }, [trip.status]);
 
@@ -218,7 +262,9 @@ function ActiveGuardianTrip({
                 ML
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Chuyến đi của bà Mai Lan</p>
+                <p className="text-sm text-muted-foreground">
+                  Chuyến đi của bà Mai Lan
+                </p>
                 <h2 className="mt-0.5 text-2xl font-black tracking-tight">
                   {statusCopy[trip.status]}
                 </h2>
@@ -238,14 +284,17 @@ function ActiveGuardianTrip({
             <LiveTripMap trip={trip} />
             {isActive && (
               <button
+                type="button"
                 onClick={() => setIsOffRoute((prev) => !prev)}
                 className={`absolute right-4 top-4 z-10 flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black shadow-md transition ${isOffRoute ? "bg-error text-white hover:opacity-90" : "bg-card text-foreground hover:bg-muted border border-border"}`}
               >
                 <Siren className="h-4 w-4" />
-                {isOffRoute ? "Tắt cảnh báo lệch hướng" : "Giả lập đi lệch hướng"}
+                {isOffRoute
+                  ? "Tắt cảnh báo lệch hướng"
+                  : "Giả lập đi lệch hướng"}
               </button>
             )}
-            <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-card/95 border border-border p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-[350px]">
+            <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between gap-4 rounded-2xl bg-card/95 border border-border p-4 shadow-xl backdrop-blur sm:left-7 sm:right-auto sm:min-w-87.5">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Điểm đến
@@ -268,7 +317,8 @@ function ActiveGuardianTrip({
           <h3 className="font-black text-lg">Thông báo & Cảnh báo</h3>
           <div className="mt-4 max-h-48 overflow-y-auto space-y-2.5 pr-1">
             {alerts.map((alert, idx) => {
-              const isWarning = alert.includes("⚠️") || alert.includes("Cảnh báo");
+              const isWarning =
+                alert.includes("⚠️") || alert.includes("Cảnh báo");
               return (
                 <div
                   key={idx}
@@ -316,7 +366,9 @@ function ActiveGuardianTrip({
             )}
             <div className="flex items-center gap-3 border-t border-border pt-4">
               <Clock3 className="h-5 w-5 text-primary" />
-              <span className="flex-1 text-sm text-muted-foreground">Giá cước chuyến xe</span>
+              <span className="flex-1 text-sm text-muted-foreground">
+                Giá cước chuyến xe
+              </span>
               <strong className="text-sm">
                 ₫{trip.price.toLocaleString("vi-VN")}
               </strong>
@@ -354,7 +406,7 @@ function ActiveGuardianTrip({
                 >
                   {index < timeline.length - 1 && (
                     <span
-                      className={`absolute left-[11px] top-6 h-full w-0.5 ${complete ? "bg-emerald-500" : "bg-border"}`}
+                      className={`absolute left-2.75 top-6 h-full w-0.5 ${complete ? "bg-emerald-500" : "bg-border"}`}
                     />
                   )}
                   <span
@@ -373,9 +425,11 @@ function ActiveGuardianTrip({
           </div>
           {trip.status === "completed" && (
             <div className="mt-5 rounded-2xl border border-border bg-muted/40 p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Ảnh bàn giao từ tài xế</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Ảnh bàn giao từ tài xế
+              </p>
               <div className="mt-2.5 overflow-hidden rounded-xl border border-border">
-                <img
+                <Image
                   src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=600"
                   alt="Ảnh bàn giao cụ bà về nhà"
                   className="h-44 w-full object-cover"
