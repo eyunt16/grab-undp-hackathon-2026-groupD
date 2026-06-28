@@ -78,6 +78,9 @@ export function useAiVoiceCommand({
   const onIntentRef = useRef(onIntent);
   const onReplyRef = useRef(onReply);
 
+  const startListeningRef = useRef<() => void>(() => {});
+  const autoListenRef = useRef(false);
+
   const clearStreamTimers = useCallback(() => {
     for (const t of streamTimerRef.current) window.clearTimeout(t);
     streamTimerRef.current = [];
@@ -147,7 +150,17 @@ export function useAiVoiceCommand({
   );
 
   const playAudio = useCallback(async (audio: VoiceResponse["audio"]) => {
-    if (!audio) return;
+    if (!audio) {
+      setMode("idle");
+      const currentStage = getStageRef.current();
+      const shouldAutoListen = ["start_booking", "confirm_booking", "confirm_cancel"].includes(currentStage);
+      if (autoListenRef.current && shouldAutoListen) {
+        setTimeout(() => {
+          startListeningRef.current();
+        }, 300);
+      }
+      return;
+    }
 
     audioRef.current?.pause();
     const player = new Audio(audioUrl(audio));
@@ -161,6 +174,14 @@ export function useAiVoiceCommand({
     });
 
     setMode("idle");
+
+    const currentStage = getStageRef.current();
+    const shouldAutoListen = ["start_booking", "confirm_booking", "confirm_cancel"].includes(currentStage);
+    if (autoListenRef.current && shouldAutoListen) {
+      setTimeout(() => {
+        startListeningRef.current();
+      }, 300);
+    }
   }, []);
 
   const handleAudioRecorded = useCallback(
@@ -277,10 +298,13 @@ export function useAiVoiceCommand({
     }
 
     if (mediaRecorderRef.current?.state === "recording") {
+      autoListenRef.current = false;
       mediaRecorderRef.current.stop();
       setMode("idle");
       return;
     }
+
+    autoListenRef.current = true;
 
     try {
       audioRef.current?.pause();
@@ -322,7 +346,12 @@ export function useAiVoiceCommand({
     }
   }, [handleAudioRecorded]);
 
+  useEffect(() => {
+    startListeningRef.current = startListening;
+  }, [startListening]);
+
   const resetVoice = useCallback(() => {
+    autoListenRef.current = false;
     audioRef.current?.pause();
     setTranscript("");
     setMode("idle");

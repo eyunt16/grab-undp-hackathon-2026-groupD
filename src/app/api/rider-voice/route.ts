@@ -14,13 +14,6 @@ export async function POST(request: Request) {
   const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
 
-  if (!googleKey) {
-    return errorResponse("Missing GOOGLE_GENERATIVE_AI_API_KEY.", 500);
-  }
-  if (!openaiKey) {
-    return errorResponse("Missing OPENAI_API_KEY.", 500);
-  }
-
   try {
     const contentType = request.headers.get("content-type") || "";
 
@@ -29,6 +22,9 @@ export async function POST(request: Request) {
     let stage: RiderStage | null = null;
 
     if (contentType.includes("multipart/form-data")) {
+      if (!openaiKey) {
+        return errorResponse("Missing OPENAI_API_KEY for audio transcription.", 500);
+      }
       const form = await request.formData();
       const audio = form.get("audio");
       const contextValue = form.get("context");
@@ -84,7 +80,12 @@ export async function POST(request: Request) {
     }
 
     const intent = await parseIntent(commandText, stage, context);
-    const speech = await textToSpeech(intent.replyText);
+    let speech: any = null;
+    try {
+      speech = await textToSpeech(intent.replyText);
+    } catch (err) {
+      console.warn("TTS generation failed in route.ts, fallback to client-side:", err);
+    }
 
     return voiceJson({
       transcript: commandText,

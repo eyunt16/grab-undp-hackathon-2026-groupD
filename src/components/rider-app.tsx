@@ -375,7 +375,13 @@ export function RiderApp() {
       });
     }, 1400);
     return () => window.clearTimeout(timer);
-  }, [trip?.status, updateTrip]);
+  }, [
+    trip?.destinationLocation,
+    trip?.liveProgress,
+    trip?.pickupLocation,
+    trip?.status,
+    updateTrip,
+  ]);
 
   useEffect(() => {
     if (!trip || !["driver_assigned", "in_progress"].includes(trip.status))
@@ -542,7 +548,8 @@ export function RiderApp() {
               driverLocation: getDriverLocationForTrip(
                 status,
                 trip.pickupLocation ?? { lat: 10.878, lng: 106.8002 },
-                trip.destinationLocation ?? destinationLocations["Bệnh viện Chợ Rẫy"],
+                trip.destinationLocation ??
+                  destinationLocations["Bệnh viện Chợ Rẫy"],
                 nextProgress,
               ),
             });
@@ -577,7 +584,6 @@ export function RiderApp() {
           }}
         />
       )}
-
     </main>
   );
 }
@@ -887,26 +893,6 @@ function ActiveElderRide({
           </div>
         </div>
       )}
-
-      {!finished && (
-        <div className="mt-5 grid grid-cols-2 gap-4">
-          <a
-            href="tel:+84901234567"
-            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border border-border bg-card text-xl font-black text-foreground hover:bg-muted transition-all"
-          >
-            <Phone className="h-7 w-7" />
-            Gọi tài xế
-          </a>
-          <a
-            href="tel:+84909876543"
-            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl border border-border bg-card text-xl font-black text-foreground hover:bg-muted transition-all"
-          >
-            <HeartHandshake className="h-7 w-7" />
-            Gọi Linh
-          </a>
-        </div>
-      )}
-
       {next && (
         <button
           type="button"
@@ -973,8 +959,3 @@ function ActiveElderRide({
     </section>
   );
 }
-
-
-
-
-
