@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { GeoPoint, Trip } from "@/lib/trip";
 
 const defaultPickup: GeoPoint = { lat: 10.7864, lng: 106.6908 };
@@ -66,17 +66,25 @@ function getVehicleLocation(
   return progress > 0 ? mix(pickup, destination, progress) : pickup;
 }
 
-function buildRoute(pickup: GeoPoint, destination: GeoPoint) {
-  const first = mix(pickup, destination, 0.28);
-  const second = mix(pickup, destination, 0.58);
-  const third = mix(pickup, destination, 0.8);
-  return [
+async function fetchRoute(
+  pickup: GeoPoint,
+  destination: GeoPoint,
+): Promise<number[][]> {
+  const fallback = [
     [pickup.lng, pickup.lat],
-    [first.lng + 0.002, first.lat - 0.001],
-    [second.lng - 0.0015, second.lat + 0.001],
-    [third.lng + 0.001, third.lat],
     [destination.lng, destination.lat],
   ];
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${pickup.lng},${pickup.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
+    const res = await fetch(url);
+    if (!res.ok) return fallback;
+    const data = await res.json();
+    const coords = data?.routes?.[0]?.geometry?.coordinates;
+    if (Array.isArray(coords) && coords.length > 1) return coords;
+    return fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export function LiveTripMap({
@@ -96,11 +104,6 @@ export function LiveTripMap({
   const vehicle = getVehicleLocation(trip, pickup, destination);
   const livePositionRef = useRef(vehicle);
   livePositionRef.current = vehicle;
-  const routeCoordinates = useMemo(
-    () => buildRoute(pickup, destination),
-    [pickup, destination],
-  );
-  routeCoordinatesRef.current = routeCoordinates;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -159,8 +162,11 @@ export function LiveTripMap({
         .setLngLat([currentVehicle.lng, currentVehicle.lat])
         .addTo(map);
 
-      map.on("load", () => {
+      map.on("load", async () => {
         if (disposed) return;
+        const routeCoords = await fetchRoute(pickup, destination);
+        if (disposed) return;
+        routeCoordinatesRef.current = routeCoords;
         map.addSource("trip-route", {
           type: "geojson",
           data: {
@@ -168,7 +174,7 @@ export function LiveTripMap({
             properties: {},
             geometry: {
               type: "LineString",
-              coordinates: routeCoordinatesRef.current,
+              coordinates: routeCoords,
             },
           },
         });
@@ -193,8 +199,8 @@ export function LiveTripMap({
           },
         });
         const bounds = new maplibregl.LngLatBounds();
-        for (const coordinate of routeCoordinatesRef.current) {
-          bounds.extend(coordinate as [number, number]);
+        for (const coord of routeCoords) {
+          bounds.extend(coord as [number, number]);
         }
         bounds.extend([currentVehicle.lng, currentVehicle.lat]);
         map.fitBounds(bounds, {
