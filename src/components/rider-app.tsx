@@ -28,7 +28,7 @@ import {
   useAiVoiceCommand,
 } from "@/hooks/use-ai-voice-command";
 import { useTripSync } from "@/hooks/use-trip-sync";
-import type { Trip, TripStatus } from "@/lib/trip";
+import type { GeoPoint, Trip, TripStatus } from "@/lib/trip";
 
 type PendingIntent =
   | { type: "ride"; destination: string }
@@ -100,6 +100,41 @@ const destinationLocations: Record<string, { lat: number; lng: number }> = {
   "Đại học quốc gia TP.HCM": { lat: 10.8702, lng: 106.8038 },
   "Nhà Linh · 88 Võ Văn Tần": { lat: 10.7752, lng: 106.6891 },
 };
+
+function mixPoint(start: GeoPoint, end: GeoPoint, progress: number): GeoPoint {
+  return {
+    lat: start.lat + (end.lat - start.lat) * progress,
+    lng: start.lng + (end.lng - start.lng) * progress,
+  };
+}
+
+function getInitialDriverLocation(pickup: GeoPoint): GeoPoint {
+  return {
+    lat: pickup.lat + 0.008,
+    lng: pickup.lng - 0.006,
+  };
+}
+
+function getDriverLocationForTrip(
+  status: TripStatus,
+  pickup: GeoPoint,
+  destination: GeoPoint,
+  progress: number,
+): GeoPoint {
+  const safeProgress = Math.max(0, Math.min(1, progress));
+  const driverStart = getInitialDriverLocation(pickup);
+
+  if (status === "matching") return driverStart;
+  if (status === "driver_assigned") {
+    return mixPoint(driverStart, pickup, safeProgress);
+  }
+  if (status === "driver_arrived") return pickup;
+  if (status === "in_progress") {
+    return mixPoint(pickup, destination, safeProgress);
+  }
+  if (status === "completed") return destination;
+  return driverStart;
+}
 
 function toKnownDestination(destination: string | undefined) {
   if (!destination) return undefined;
@@ -274,6 +309,10 @@ export function RiderApp() {
 
   const createTrip = useCallback(
     (destination: string) => {
+      const pickupLocation = { lat: 10.7864, lng: 106.6908 };
+      const destinationLocation =
+        destinationLocations[destination] ??
+        destinationLocations["Bệnh viện Chợ Rẫy"];
       const newTrip: Trip = {
         id: `EM-${Date.now().toString().slice(-6)}`,
         riderName: "Mai Lan",
@@ -283,10 +322,9 @@ export function RiderApp() {
         price: destination.includes("Bệnh viện") ? 68000 : 52000,
         eta: 4,
         status: "matching",
-        pickupLocation: { lat: 10.7864, lng: 106.6908 },
-        destinationLocation:
-          destinationLocations[destination] ??
-          destinationLocations["Bệnh viện Chợ Rẫy"],
+        pickupLocation,
+        destinationLocation,
+        driverLocation: getInitialDriverLocation(pickupLocation),
         liveProgress: 0,
         createdAt: new Date().toISOString(),
       };
@@ -334,6 +372,12 @@ export function RiderApp() {
         driverName: "Minh Quân",
         plate: "51H-482.16",
         vehicle: "Toyota Vios màu bạc",
+        driverLocation: getDriverLocationForTrip(
+          "driver_assigned",
+          trip.pickupLocation ?? { lat: 10.7864, lng: 106.6908 },
+          trip.destinationLocation ?? destinationLocations["Bệnh viện Chợ Rẫy"],
+          trip.liveProgress ?? 0,
+        ),
       });
     }, 1400);
     return () => window.clearTimeout(timer);
@@ -346,7 +390,16 @@ export function RiderApp() {
     const current = trip.liveProgress ?? 0;
     if (current >= limit) return;
     const timer = window.setTimeout(() => {
-      updateTrip({ liveProgress: Math.min(limit, current + 0.08) });
+      const nextProgress = Math.min(limit, current + 0.08);
+      updateTrip({
+        liveProgress: nextProgress,
+        driverLocation: getDriverLocationForTrip(
+          trip.status,
+          trip.pickupLocation ?? { lat: 10.7864, lng: 106.6908 },
+          trip.destinationLocation ?? destinationLocations["Bệnh viện Chợ Rẫy"],
+          nextProgress,
+        ),
+      });
     }, 1200);
     return () => window.clearTimeout(timer);
   }, [trip, updateTrip]);
@@ -486,15 +539,20 @@ export function RiderApp() {
           voiceMode={mode}
           voiceMessage={message}
           onListen={startListening}
-          onAdvance={(status) =>
+          onAdvance={(status) => {
+            const nextProgress =
+              status === "driver_arrived" || status === "completed" ? 1 : 0.05;
             updateTrip({
               status,
-              liveProgress:
-                status === "driver_arrived" || status === "completed"
-                  ? 1
-                  : 0.05,
-            })
-          }
+              liveProgress: nextProgress,
+              driverLocation: getDriverLocationForTrip(
+                status,
+                trip.pickupLocation ?? { lat: 10.7864, lng: 106.6908 },
+                trip.destinationLocation ?? destinationLocations["Bệnh viện Chợ Rẫy"],
+                nextProgress,
+              ),
+            });
+          }}
           onCancel={() => {
             setHistory((prev) => [
               ...prev,
@@ -983,3 +1041,8 @@ function ActiveElderRide({
     </section>
   );
 }
+
+
+
+
+

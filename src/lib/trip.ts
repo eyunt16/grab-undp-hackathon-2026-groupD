@@ -20,6 +20,7 @@ export type Trip = {
   vehicle?: string;
   pickupLocation?: GeoPoint;
   destinationLocation?: GeoPoint;
+  driverLocation?: GeoPoint;
   liveProgress?: number;
   createdAt: string;
 };
