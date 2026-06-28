@@ -6,6 +6,7 @@ import {
   HeartHandshake,
   Home,
   MapPin,
+  MessageSquareText,
   Mic,
   MicOff,
   Navigation,
@@ -23,6 +24,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   type AiVoiceIntent,
   type RiderVoiceStage,
+  type VoiceConversationEntry,
   useAiVoiceCommand,
 } from "@/hooks/use-ai-voice-command";
 import { useTripSync } from "@/hooks/use-trip-sync";
@@ -193,6 +195,7 @@ export function RiderApp() {
   const {
     mode,
     message,
+    conversation,
     processTextCommand,
     speak,
     startListening,
@@ -500,7 +503,70 @@ export function RiderApp() {
           }}
         />
       )}
+
+      <ConversationStreamPanel conversation={conversation} />
     </main>
+  );
+}
+
+function ConversationStreamPanel({
+  conversation,
+}: {
+  conversation: VoiceConversationEntry[];
+}) {
+  return (
+    <section className="mx-auto mt-2 w-full max-w-4xl px-5 pb-10 sm:px-8">
+      <div className="rounded-[2rem] border border-border bg-card p-5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] sm:p-6">
+        <div className="flex items-center gap-3">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <MessageSquareText className="h-6 w-6" />
+          </span>
+          <div>
+            <p className="text-xl font-black">Streaming conversation</p>
+            <p className="text-sm text-muted-foreground">
+              Lịch sử hội thoại đang stream giữa người dùng và AloXe.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {conversation.length === 0 ? (
+            <div className="rounded-2xl bg-muted px-4 py-5 text-sm font-medium text-muted-foreground">
+              Chưa có hội thoại. Nhấn micro để bắt đầu.
+            </div>
+          ) : (
+            conversation.map((entry) => (
+              <div
+                key={entry.id}
+                className={`rounded-2xl px-4 py-3 ${entry.role === "assistant" ? "bg-primary/5 text-foreground" : entry.role === "user" ? "bg-muted text-foreground" : "bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300"}`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]">
+                    {entry.role === "assistant"
+                      ? "AloXe"
+                      : entry.role === "user"
+                        ? "Người dùng"
+                        : "Hệ thống"}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em] ${entry.status === "streaming" ? "bg-primary/10 text-primary" : entry.status === "error" ? "bg-error/10 text-error" : "bg-muted text-muted-foreground"}`}
+                  >
+                    {entry.status === "streaming"
+                      ? "stream"
+                      : entry.status === "error"
+                        ? "error"
+                        : "done"}
+                  </span>
+                </div>
+                <p className="mt-2 text-base leading-7">
+                  {entry.text || "Đang phản hồi..."}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -24,6 +24,13 @@ export type RiderVoiceStage =
   | "active_trip"
   | "confirm_cancel";
 
+export type VoiceConversationEntry = {
+  id: string;
+  role: "user" | "assistant" | "system";
+  text: string;
+  status: "streaming" | "done" | "error";
+};
+
 type VoiceResponse = {
   transcript?: string;
   intent?: AiVoiceIntent;
@@ -47,6 +54,10 @@ function audioUrl(audio: NonNullable<VoiceResponse["audio"]>) {
   return `data:${audio.mediaType};base64,${audio.base64}`;
 }
 
+function createConversationId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
 export function useAiVoiceCommand({
   getContext,
   getStage,
@@ -56,14 +67,53 @@ export function useAiVoiceCommand({
   const [mode, setMode] = useState<AiVoiceMode>("idle");
   const [message, setMessage] = useState("Nhấn nút và nói nơi bạn muốn đến");
   const [transcript, setTranscript] = useState("");
+  const [conversation, setConversation] = useState<VoiceConversationEntry[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const streamTimerRef = useRef<number[]>([]);
   const getContextRef = useRef(getContext);
   const getStageRef = useRef(getStage);
   const onIntentRef = useRef(onIntent);
   const onReplyRef = useRef(onReply);
+
+  const clearStreamTimers = useCallback(() => {
+    for (const t of streamTimerRef.current) window.clearTimeout(t);
+    streamTimerRef.current = [];
+  }, []);
+
+  const appendConversation = useCallback((entry: VoiceConversationEntry) => {
+    setConversation((c) => [...c.slice(-19), entry]);
+  }, []);
+
+  const streamAssistantText = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      clearStreamTimers();
+      const id = createConversationId("assistant");
+      const words = trimmed.split(/\s+/);
+      appendConversation({ id, role: "assistant", text: "", status: "streaming" });
+      words.forEach((word, i) => {
+        const timer = window.setTimeout(() => {
+          setConversation((c) =>
+            c.map((e) =>
+              e.id === id
+                ? {
+                    ...e,
+                    text: `${e.text}${e.text ? " " : ""}${word}`,
+                    status: i === words.length - 1 ? "done" : "streaming",
+                  }
+                : e,
+            ),
+          );
+        }, i * 45);
+        streamTimerRef.current.push(timer);
+      });
+    },
+    [appendConversation, clearStreamTimers],
+  );
 
   useEffect(() => {
     getContextRef.current = getContext;
@@ -91,8 +141,9 @@ export function useAiVoiceCommand({
           track.stop();
         }
       }
+      clearStreamTimers();
     },
-    [],
+    [clearStreamTimers],
   );
 
   const playAudio = useCallback(async (audio: VoiceResponse["audio"]) => {
@@ -129,33 +180,38 @@ export function useAiVoiceCommand({
       const data = (await response.json()) as VoiceResponse;
 
       if (!response.ok) {
+        const err = data.error ?? "Tôi chưa nghe rõ. Bạn thử nói lại nhé.";
         setMode("error");
-        setMessage(data.error ?? "Tôi chưa nghe rõ. Bạn thử nói lại nhé.");
+        setMessage(err);
+        appendConversation({ id: createConversationId("system"), role: "system", text: err, status: "error" });
         return "";
       }
 
-      setTranscript(data.transcript ?? "");
-      setMessage(
-        data.transcript
-          ? `Đã nghe: "${data.transcript}"`
-          : (data.replyText ?? ""),
-      );
-      if (data.replyText && onReplyRef.current) {
-        onReplyRef.current(data.replyText);
+      const heard = data.transcript ?? "";
+      setTranscript(heard);
+      setMessage(heard ? `Đã nghe: "${heard}"` : (data.replyText ?? ""));
+      if (heard) {
+        appendConversation({ id: createConversationId("user"), role: "user", text: heard, status: "done" });
+      }
+      if (data.replyText) {
+        streamAssistantText(data.replyText);
+        onReplyRef.current?.(data.replyText);
       }
       navigator.vibrate?.(70);
       if (data.intent) onIntentRef.current(data.intent);
       await playAudio(data.audio);
 
-      return data.transcript ?? "";
+      return heard;
     },
-    [playAudio],
+    [appendConversation, playAudio, streamAssistantText],
   );
 
   const processTextCommand = useCallback(
     async (text: string) => {
       setMode("processing");
       setMessage("AloXe dang phan tich...");
+      appendConversation({ id: createConversationId("user"), role: "user", text, status: "done" });
+
       const response = await fetch("/api/rider-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -168,20 +224,23 @@ export function useAiVoiceCommand({
       const data = (await response.json()) as VoiceResponse;
 
       if (!response.ok) {
+        const err = data.error ?? "Toi chua hieu. Ban thu lai nhe.";
         setMode("error");
-        setMessage(data.error ?? "Toi chua hieu. Ban thu lai nhe.");
+        setMessage(err);
+        appendConversation({ id: createConversationId("system"), role: "system", text: err, status: "error" });
         return;
       }
 
       setTranscript(data.transcript ?? text);
       setMessage(data.replyText ?? text);
-      if (data.replyText && onReplyRef.current) {
-        onReplyRef.current(data.replyText);
+      if (data.replyText) {
+        streamAssistantText(data.replyText);
+        onReplyRef.current?.(data.replyText);
       }
       if (data.intent) onIntentRef.current(data.intent);
       await playAudio(data.audio);
     },
-    [playAudio],
+    [appendConversation, playAudio, streamAssistantText],
   );
 
   const speak = useCallback(
@@ -282,6 +341,7 @@ export function useAiVoiceCommand({
     mode,
     message,
     transcript,
+    conversation,
     handleAudioRecorded,
     processTextCommand,
     speak,
